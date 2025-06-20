@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug NetworkError</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        .test { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
+        .success { background: #d4edda; }
+        .error { background: #f8d7da; }
+        .info { background: #d1ecf1; }
+        pre { white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug NetworkError - Sistema Hospitalario</h1>
+    <div id="results"></div>
+
+    <script>
+        const results = document.getElementById('results');
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+
+        async function runTests() {
+            log('<h2>1️⃣ Test: Frontend Next.js</h2>');
+            try {
+                const res1 = await fetch('http://localhost:3000/api/test');
+                log(`Frontend Response: ${res1.status} ${res1.statusText}`, res1.ok ? 'success' : 'error');
+            } catch (e) {
+                log(`Frontend Error: ${e.message}<br>Type: ${e.name}`, 'error');
+            }
+
+            log('<h2>2️⃣ Test: Backend Direct (No Auth)</h2>');
+            try {
+                const res2 = await fetch('http://127.0.0.1:8000/health');
+                const data2 = await res2.json();
+                log(`Backend Health: ${res2.status} - ${JSON.stringify(data2)}`, 'success');
+            } catch (e) {
+                log(`Backend Error: ${e.message}<br>Type: ${e.name}`, 'error');
+            }
+
+            log('<h2>3️⃣ Test: Backend Auth</h2>');
+            try {
+                const loginRes = await fetch('http://127.0.0.1:8000/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        hospital_code: 'HOSP001',
+                        username: 'admin', 
+                        password: 'admin123'
+                    })
+                });
+                const loginData = await loginRes.json();
+                if (loginData.access_token) {
+                    log(`Login Success! Token: ${loginData.access_token.substring(0, 50)}...`, 'success');
+                    localStorage.setItem('hospital_token', loginData.access_token);
+                } else {
+                    log(`Login Failed: ${JSON.stringify(loginData)}`, 'error');
+                }
+            } catch (e) {
+                log(`Login Error: ${e.message}<br>Type: ${e.name}`, 'error');
+            }
+
+            log('<h2>4️⃣ Test: Lista Espera (With Auth)</h2>');
+            const token = localStorage.getItem('hospital_token');
+            if (token) {
+                try {
+                    const res4 = await fetch('http://127.0.0.1:8000/episodios/lista-espera', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    const data4 = await res4.json();
+                    log(`Lista Espera: ${res4.status} - ${JSON.stringify(data4).substring(0, 200)}...`, res4.ok ? 'success' : 'error');
+                } catch (e) {
+                    log(`Lista Espera Error: ${e.message}<br>Type: ${e.name}`, 'error');
+                }
+            } else {
+                log('No token found - skipping authenticated test', 'error');
+            }
+
+            log('<h2>5️⃣ Test: CORS Preflight</h2>');
+            try {
+                const res5 = await fetch('http://127.0.0.1:8000/episodios/lista-espera', {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': 'http://localhost:3000',
+                        'Access-Control-Request-Method': 'GET',
+                        'Access-Control-Request-Headers': 'authorization'
+                    }
+                });
+                log(`CORS Preflight: ${res5.status} ${res5.statusText}`, res5.ok ? 'success' : 'error');
+                log(`CORS Headers:<br>Access-Control-Allow-Origin: ${res5.headers.get('Access-Control-Allow-Origin')}<br>Access-Control-Allow-Methods: ${res5.headers.get('Access-Control-Allow-Methods')}`, 'info');
+            } catch (e) {
+                log(`CORS Error: ${e.message}<br>Type: ${e.name}`, 'error');
+            }
+
+            log('<h2>6️⃣ Network Information</h2>');
+            log(`Current URL: ${window.location.href}<br>Origin: ${window.location.origin}`, 'info');
+            log(`LocalStorage Token: ${localStorage.getItem('hospital_token') ? 'Present' : 'Missing'}`, localStorage.getItem('hospital_token') ? 'success' : 'error');
+            
+            log('<h2>✅ Tests Complete</h2>');
+            log('Open DevTools Network tab and refresh to see detailed requests', 'info');
+        }
+
+        // Run tests on load
+        runTests();
+    </script>
+</body>
+</html> 
