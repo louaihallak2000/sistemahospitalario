@@ -6,11 +6,11 @@ import time
 import logging
 from datetime import datetime
 
-from app.api.v1 import auth, pacientes, episodios
+from app.api.v1 import auth, pacientes, episodios, admision, enfermeria
 from app.core.database import engine, Base
 
 # Importar todos los modelos para que SQLAlchemy los reconozca
-from app.models import hospital, usuario, paciente, episodio
+from app.models import hospital, usuario, paciente, episodio, admision, enfermeria
 
 # Configurar logging detallado
 logging.basicConfig(
@@ -128,6 +128,18 @@ app.include_router(
     episodios.router,
     prefix="/episodios", 
     tags=["Episodios"]
+)
+
+app.include_router(
+    admision.router,
+    prefix="/admision",
+    tags=["Admisión"]
+)
+
+app.include_router(
+    enfermeria.router,
+    prefix="/enfermeria",
+    tags=["Enfermería"]
 )
 
 # Endpoint raíz

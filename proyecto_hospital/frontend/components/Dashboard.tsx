@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Hospital, LogOut, UserPlus, List, Package, Clock, User, AlertTriangle, Eye, RefreshCw } from "lucide-react"
+import { Hospital, LogOut, UserPlus, List, Package, Clock, User, AlertTriangle, Eye, RefreshCw, ClipboardPlus, HeartPulse } from "lucide-react"
 import { useHospital } from "@/lib/context"
 import { PatientRegistrationModal } from "./PatientRegistrationModal"
 import type { TriageColor, Episode } from "@/lib/types"
@@ -188,6 +188,16 @@ export function Dashboard() {
     }
   }
 
+  const navigateToAdmission = () => {
+    console.log("🏥 Navegando a Admisión...")
+    dispatch({ type: "SET_SCREEN", payload: "admission" })
+  }
+
+  const navigateToNursing = () => {
+    console.log("👩‍⚕️ Navegando a Enfermería...")
+    dispatch({ type: "SET_SCREEN", payload: "nursing" })
+  }
+
   const getAge = (birthDate?: string) => {
     if (!birthDate) return "N/A"
     const today = new Date()
@@ -246,6 +256,14 @@ export function Dashboard() {
           <Button onClick={() => setShowPatientModal(true)} className="bg-blue-600 hover:bg-blue-700">
             <UserPlus className="h-4 w-4 mr-2" />
             Nuevo Paciente
+          </Button>
+          <Button variant="outline" onClick={navigateToAdmission}>
+            <ClipboardPlus className="h-4 w-4 mr-2" />
+            Admisión
+          </Button>
+          <Button variant="outline" onClick={navigateToNursing}>
+            <HeartPulse className="h-4 w-4 mr-2" />
+            Enfermería
           </Button>
           <Button variant="outline">
             <List className="h-4 w-4 mr-2" />

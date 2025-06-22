@@ -4,6 +4,8 @@ import { useHospital } from "@/lib/context"
 import { LoginScreen } from "./LoginScreen"
 import { Dashboard } from "./Dashboard"
 import { PatientRecord } from "./PatientRecord"
+import { AdmissionView } from "./AdmissionView"
+import { NursingView } from "./NursingView"
 
 export function HospitalApp() {
   const { state } = useHospital()
@@ -22,6 +24,12 @@ export function HospitalApp() {
     case "patient":
       console.log("📱 Renderizando: PatientRecord")
       return <PatientRecord />
+    case "admission":
+      console.log("📱 Renderizando: AdmissionView")
+      return <AdmissionView />
+    case "nursing":
+      console.log("📱 Renderizando: NursingView")
+      return <NursingView />
     default:
       console.error("🚨 PROBLEMA ENCONTRADO - Screen no reconocida:", state.currentScreen)
       console.error("🔧 SOLUCION: Agregando caso 'patient' faltante")

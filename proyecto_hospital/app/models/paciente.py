@@ -37,5 +37,11 @@ class PacienteHospital(Base):
     fecha_ultima_atencion = Column(DateTime)
     notas_administrativas = Column(Text)
     
+    # 🏥 NUEVOS CAMPOS PARA ADMISIÓN (nullable=True para compatibilidad)
+    documento_tipo = Column(String(30), nullable=True)  # DNI, Pasaporte, etc.
+    contacto_emergencia_nombre = Column(String(100), nullable=True)
+    contacto_emergencia_telefono = Column(String(30), nullable=True)
+    contacto_emergencia_parentesco = Column(String(50), nullable=True)  # Padre, Madre, Cónyuge, etc.
+    
     paciente = relationship("Paciente", back_populates="hospitales")
     hospital = relationship("Hospital", back_populates="pacientes_hospital") 
