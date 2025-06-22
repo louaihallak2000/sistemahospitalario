@@ -18,4 +18,6 @@ class Hospital(Base):
     configuracion = Column(JSON)
     
     # Relaciones
-    episodios = relationship("Episodio", back_populates="hospital") 
+    usuarios = relationship("Usuario", back_populates="hospital", cascade="all, delete-orphan")
+    episodios = relationship("Episodio", back_populates="hospital", cascade="all, delete-orphan")
+    pacientes_hospital = relationship("PacienteHospital", back_populates="hospital", cascade="all, delete-orphan") 

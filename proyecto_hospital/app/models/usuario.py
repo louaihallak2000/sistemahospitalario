@@ -10,7 +10,7 @@ class Usuario(Base):
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     username = Column(String(100), nullable=False)
     password_hash = Column(String(255), nullable=False)
-    hospital_id = Column(String(10), ForeignKey("hospitales.id"), nullable=False)
+    hospital_id = Column(String(10), ForeignKey("hospitales.id", ondelete="CASCADE"), nullable=False)
     nombre = Column(String(255), nullable=False)
     apellido = Column(String(255), nullable=False)
     email = Column(String(255))
@@ -22,4 +22,4 @@ class Usuario(Base):
     ultimo_acceso = Column(DateTime)
     configuracion_personal = Column(JSON)
     
-    hospital = relationship("Hospital") 
+    hospital = relationship("Hospital", back_populates="usuarios") 

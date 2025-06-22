@@ -1,8 +1,10 @@
 from fastapi import FastAPI, Request, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.responses import JSONResponse
 import time
 import logging
+from datetime import datetime
 
 from app.api.v1 import auth, pacientes, episodios
 from app.core.database import engine, Base
@@ -10,12 +12,16 @@ from app.core.database import engine, Base
 # Importar todos los modelos para que SQLAlchemy los reconozca
 from app.models import hospital, usuario, paciente, episodio
 
-# Configurar logging
-logging.basicConfig(level=logging.INFO)
+# Configurar logging detallado
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
 # Crear tablas en la base de datos
 Base.metadata.create_all(bind=engine)
+logger.info("✅ Base de datos inicializada")
 
 # Crear aplicación FastAPI
 app = FastAPI(
@@ -29,38 +35,70 @@ app = FastAPI(
 # Configurar CORS con configuración específica
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001", "*"],
+    allow_origins=["http://localhost:3000"],  # Only allow your frontend
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["*"],
+    allow_headers=["authorization", "content-type", "cache-control"],  # Added cache-control
+    expose_headers=["*"]
 )
+
+# Middleware para logging de requests
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """Middleware para loguear todas las requests"""
+    start_time = time.time()
+    
+    # Log de la request entrante
+    logger.debug(f"📥 {request.method} {request.url.path}")
+    logger.debug(f"Headers: {dict(request.headers)}")
+    
+    # Procesar la request
+    response = await call_next(request)
+    
+    # Log del response
+    process_time = time.time() - start_time
+    logger.debug(f"📤 Status: {response.status_code} - Time: {process_time:.3f}s")
+    
+    return response
 
 # Middleware para asegurar headers CORS en todas las respuestas
 @app.middleware("http")
 async def ensure_cors_headers(request: Request, call_next):
     """Middleware para asegurar headers CORS en todas las respuestas"""
+    allowed_origin = "http://localhost:3000"
+    allowed_headers = "authorization, content-type, cache-control"  # Added cache-control
+    allowed_methods = "GET, POST, PUT, DELETE, OPTIONS"
+
+    # Manejar preflight OPTIONS
+    if request.method == "OPTIONS":
+        response = JSONResponse(content={"status": "ok"})
+        origin = request.headers.get("origin")
+        if origin == allowed_origin:
+            response.headers["Access-Control-Allow-Origin"] = allowed_origin
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Access-Control-Allow-Methods"] = allowed_methods
+            response.headers["Access-Control-Allow-Headers"] = allowed_headers
+        return response
+
     response = await call_next(request)
-    
+
     # Agregar headers CORS manualmente si no están presentes
     origin = request.headers.get("origin")
-    if origin in ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001"]:
-        response.headers["Access-Control-Allow-Origin"] = origin
+    if origin == allowed_origin:
+        response.headers["Access-Control-Allow-Origin"] = allowed_origin
         response.headers["Access-Control-Allow-Credentials"] = "true"
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = allowed_methods
+        response.headers["Access-Control-Allow-Headers"] = allowed_headers
         response.headers["Access-Control-Expose-Headers"] = "*"
-    
+
     return response
 
 # Middleware para validar hospital_id en requests autenticadas
 @app.middleware("http")
 async def validate_hospital_context(request: Request, call_next):
     """Middleware para validar el contexto del hospital en requests autenticadas"""
-    start_time = time.time()
-    
     # Excluir rutas que no requieren validación de hospital
-    excluded_paths = ["/docs", "/redoc", "/openapi.json", "/auth/login", "/"]
+    excluded_paths = ["/docs", "/redoc", "/openapi.json", "/auth/login", "/", "/health"]
     
     if request.url.path in excluded_paths or request.url.path.startswith("/docs"):
         response = await call_next(request)
@@ -68,9 +106,8 @@ async def validate_hospital_context(request: Request, call_next):
         # Para rutas protegidas, la validación se hace en los dependencies
         response = await call_next(request)
     
-    # Log de tiempo de procesamiento
-    process_time = time.time() - start_time
-    response.headers["X-Process-Time"] = str(process_time)
+    # Agregar header de tiempo de procesamiento
+    response.headers["X-Process-Time"] = str(time.time())
     
     return response
 
@@ -97,31 +134,50 @@ app.include_router(
 @app.get("/")
 async def root():
     """Endpoint raíz del sistema hospitalario"""
+    logger.info("Acceso al endpoint raíz")
     return {
         "mensaje": "Sistema Hospitalario Multi-Tenant",
         "version": "1.0.0",
-        "documentación": "/docs"
+        "documentación": "/docs",
+        "estado": "operativo",
+        "timestamp": datetime.now().isoformat()
     }
 
-# Endpoint de salud
+# Endpoint de salud mejorado
 @app.get("/health")
 async def health_check():
     """Endpoint para verificar el estado del sistema"""
+    try:
+        # Verificar conexión a la base de datos
+        from app.core.database import SessionLocal
+        db = SessionLocal()
+        db.execute("SELECT 1")
+        db.close()
+        db_status = "healthy"
+    except Exception as e:
+        logger.error(f"Error en health check de DB: {e}")
+        db_status = "unhealthy"
+    
     return {
         "status": "healthy",
-        "timestamp": time.time()
+        "timestamp": datetime.now().isoformat(),
+        "database": db_status,
+        "version": "1.0.0"
     }
 
-# Manejar requests OPTIONS para CORS preflight
-@app.options("/{path:path}")
-async def options_handler(request: Request):
-    """Manejar requests OPTIONS para CORS preflight"""
-    return {
-        "status": "ok"
-    }
-
-
+# Manejar errores globalmente
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Error global: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "Error interno del servidor",
+            "type": type(exc).__name__,
+            "message": str(exc)
+        }
+    )
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000) 
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="debug") 

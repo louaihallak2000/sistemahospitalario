@@ -15,17 +15,18 @@ class Paciente(Base):
     tipo_sangre = Column(String(5))
     alergias_conocidas = Column(Text)
     fecha_creacion = Column(DateTime, default=datetime.utcnow)
-    fecha_ultima_actualizacion = Column(DateTime, default=datetime.utcnow)
+    fecha_ultima_actualizacion = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relaciones
-    episodios = relationship("Episodio", back_populates="paciente")
+    episodios = relationship("Episodio", back_populates="paciente", cascade="all, delete-orphan")
+    hospitales = relationship("PacienteHospital", back_populates="paciente", cascade="all, delete-orphan")
 
 class PacienteHospital(Base):
     __tablename__ = "pacientes_hospital"
     
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    paciente_id = Column(String(36), ForeignKey("pacientes.id"), nullable=False)
-    hospital_id = Column(String(10), ForeignKey("hospitales.id"), nullable=False)
+    paciente_id = Column(String(36), ForeignKey("pacientes.id", ondelete="CASCADE"), nullable=False)
+    hospital_id = Column(String(10), ForeignKey("hospitales.id", ondelete="CASCADE"), nullable=False)
     numero_historia_local = Column(String(20))
     telefono = Column(String(20))
     direccion = Column(Text)
@@ -36,5 +37,5 @@ class PacienteHospital(Base):
     fecha_ultima_atencion = Column(DateTime)
     notas_administrativas = Column(Text)
     
-    paciente = relationship("Paciente")
-    hospital = relationship("Hospital") 
+    paciente = relationship("Paciente", back_populates="hospitales")
+    hospital = relationship("Hospital", back_populates="pacientes_hospital") 

@@ -7,9 +7,23 @@ import os
 import sys
 from datetime import datetime, date
 import uuid
+import logging
+
+# Configurar logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# Asegurar que el directorio del proyecto esté en el PATH
+proyecto_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, proyecto_dir)
 
 # Agregar el directorio app al path para importar los módulos
-sys.path.append(os.path.join(os.path.dirname(__file__), 'app'))
+app_dir = os.path.join(proyecto_dir, 'app')
+if app_dir not in sys.path:
+    sys.path.append(app_dir)
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -20,20 +34,40 @@ from app.models.episodio import Episodio
 from app.core.security import get_password_hash
 from app.core.database import Base
 
-# Configuración de base de datos - Cambiado a SQLite
-DATABASE_URL = "sqlite:///./hospital_db.sqlite"
+# Configuración de base de datos - SQLite con ruta absoluta
+DATABASE_PATH = os.path.join(proyecto_dir, "hospital_db.sqlite")
+DATABASE_URL = f"sqlite:///{DATABASE_PATH}"
 
 def init_database():
     """Inicializa la base de datos con datos de ejemplo"""
     
+    logger.info(f"Iniciando creación de base de datos en: {DATABASE_PATH}")
+    
     # Crear engine y sesión
-    engine = create_engine(DATABASE_URL)
-    Base.metadata.create_all(bind=engine)
+    engine = create_engine(DATABASE_URL, echo=False)
+    
+    # Verificar conexión
+    try:
+        connection = engine.connect()
+        logger.info("✅ Conexión a la base de datos establecida")
+        connection.close()
+    except Exception as e:
+        logger.error(f"❌ Error conectando a la base de datos: {e}")
+        return
+    
+    # Crear todas las tablas
+    try:
+        Base.metadata.create_all(bind=engine)
+        logger.info("✅ Tablas creadas exitosamente")
+    except Exception as e:
+        logger.error(f"❌ Error creando tablas: {e}")
+        return
+    
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     db = SessionLocal()
     
     try:
-        print("Inicializando base de datos con datos de ejemplo...")
+        logger.info("Inicializando base de datos con datos de ejemplo...")
         
         # Crear hospitales de ejemplo
         hospitales = [
@@ -257,28 +291,28 @@ def init_database():
             db.add(episodio)
         
         db.commit()
-        print("✅ Base de datos inicializada correctamente!")
-        print("\n📋 Datos de ejemplo creados:")
-        print("   🏥 Hospitales: HOSP001, HOSP002")
-        print("   👤 Usuarios de prueba:")
-        print("      - admin/admin123 (HOSP001)")
-        print("      - medico1/medico123 (HOSP001)")
-        print("      - enfermera1/enfermera123 (HOSP001)")
-        print("      - admin2/admin456 (HOSP002)")
-        print("   🧑‍⚕️ Pacientes: 3 pacientes registrados en ambos hospitales")
-        print("   📊 Episodios: 5 episodios de ejemplo creados con diferentes triajes")
-        print("      - ROJO: 1 episodio (emergencia)")
-        print("      - NARANJA: 1 episodio (urgencia)")  
-        print("      - AMARILLO: 1 episodio (menos urgente)")
-        print("      - VERDE: 1 episodio (no urgente)")
-        print("      - AZUL: 1 episodio (consulta)")
-        print("\n🚀 Sistema listo para usar!")
-        print("   Frontend: http://localhost:3000")
-        print("   Backend: http://127.0.0.1:8000")
-        print("   Docs: http://127.0.0.1:8000/docs")
+        logger.info("✅ Base de datos inicializada correctamente!")
+        logger.info("\n📋 Datos de ejemplo creados:")
+        logger.info("   🏥 Hospitales: HOSP001, HOSP002")
+        logger.info("   👤 Usuarios de prueba:")
+        logger.info("      - admin/admin123 (HOSP001)")
+        logger.info("      - medico1/medico123 (HOSP001)")
+        logger.info("      - enfermera1/enfermera123 (HOSP001)")
+        logger.info("      - admin2/admin456 (HOSP002)")
+        logger.info("   🧑‍⚕️ Pacientes: 3 pacientes registrados en ambos hospitales")
+        logger.info("   📊 Episodios: 5 episodios de ejemplo creados con diferentes triajes")
+        logger.info("      - ROJO: 1 episodio (emergencia)")
+        logger.info("      - NARANJA: 1 episodio (urgencia)")  
+        logger.info("      - AMARILLO: 1 episodio (menos urgente)")
+        logger.info("      - VERDE: 1 episodio (no urgente)")
+        logger.info("      - AZUL: 1 episodio (consulta)")
+        logger.info("\n🚀 Sistema listo para usar!")
+        logger.info("   Frontend: http://localhost:3000")
+        logger.info("   Backend: http://127.0.0.1:8000")
+        logger.info("   Docs: http://127.0.0.1:8000/docs")
         
     except Exception as e:
-        print(f"❌ Error al inicializar la base de datos: {e}")
+        logger.error(f"❌ Error al inicializar la base de datos: {e}")
         db.rollback()
         raise
     finally:

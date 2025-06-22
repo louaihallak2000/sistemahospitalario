@@ -8,8 +8,8 @@ class Episodio(Base):
     __tablename__ = "episodios"
     
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    paciente_id = Column(String(36), ForeignKey("pacientes.id"), nullable=False)
-    hospital_id = Column(String(10), ForeignKey("hospitales.id"), nullable=False)
+    paciente_id = Column(String(36), ForeignKey("pacientes.id", ondelete="CASCADE"), nullable=False)
+    hospital_id = Column(String(10), ForeignKey("hospitales.id", ondelete="CASCADE"), nullable=False)
     numero_episodio_local = Column(String(20))
     fecha_inicio = Column(DateTime, nullable=False, default=datetime.utcnow)
     fecha_cierre = Column(DateTime)

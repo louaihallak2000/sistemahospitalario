@@ -8,7 +8,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Hospital, LogOut, UserPlus, List, Package, Clock, User, AlertTriangle, Eye, RefreshCw } from "lucide-react"
 import { useHospital } from "@/lib/context"
 import { PatientRegistrationModal } from "./PatientRegistrationModal"
-import type { TriageColor } from "@/lib/types"
+import type { TriageColor, Episode } from "@/lib/types"
+import { PatientList } from "./PatientList"
+import { TriageStats } from "./TriageStats"
+import { Alerts } from "./Alerts"
+import { AwaitingTriageList } from "./AwaitingTriageList"
 
 const triageColors: Record<TriageColor, { bg: string; text: string; color: string }> = {
   ROJO: { bg: "bg-red-100", text: "text-red-800", color: "#dc2626" },
@@ -92,16 +96,22 @@ export function Dashboard() {
     })
   })
 
+  // Helper para buscar un episodio por ID en ambas listas
+  const findEpisodeById = (episodeId: string) => {
+    // Busca primero en la lista principal, luego en la de triaje
+    return (
+      state.episodes.find((e) => e.id === episodeId) ||
+      state.episodesAwaitingTriage.find((e) => e.id === episodeId)
+    );
+  };
+
   const handleTakePatient = (episodeId: string) => {
-    console.log("🔥 MÉTODO ULTRA SIMPLE - handleTakePatient para episodio:", episodeId)
-    
-    // 🛡️ NO USAR async/await PARA EVITAR CUALQUIER PROBLEMA
-    const episode = state.episodes.find((e) => e.id === episodeId)
-    console.log("📋 Episodio encontrado:", episode?.id)
-    
+    // Buscar el episodio en ambas listas
+    const episode = findEpisodeById(episodeId);
+    console.log("📋 Episodio encontrado:", episode?.id);
     if (!episode) {
-      console.error("❌ Episodio no encontrado")
-      return
+      console.error("❌ Episodio no encontrado");
+      return;
     }
 
     console.log("🔧 Preparando datos básicos del paciente...")
@@ -131,15 +141,12 @@ export function Dashboard() {
   }
 
   const handleVerFicha = (episodeId: string) => {
-    console.log("🔍 VER FICHA - episodeId:", episodeId)
-    console.log("📍 URL destino: PatientRecord component")
-    
-    const episode = state.episodes.find((e) => e.id === episodeId)
-    console.log("📋 Episodio encontrado para Ver Ficha:", episode?.id)
-    
+    // Buscar el episodio en ambas listas
+    const episode = findEpisodeById(episodeId);
+    console.log("📋 Episodio encontrado para Ver Ficha:", episode?.id);
     if (!episode) {
-      console.error("❌ Episodio no encontrado para Ver Ficha")
-      return
+      console.error("❌ Episodio no encontrado para Ver Ficha");
+      return;
     }
 
     console.log("🔧 Preparando datos para Ver Ficha...")
@@ -213,37 +220,22 @@ export function Dashboard() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Estadísticas de Triaje */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-          {Object.entries(triageStats).map(([color, count]) => (
-            <Card key={color} className="text-center bg-white shadow-sm border">
-              <CardContent className="p-4 bg-white">
-                <div
-                  className={`w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center text-white font-bold text-lg`}
-                  style={{ backgroundColor: triageColors[color as TriageColor].color }}
-                >
-                  {count}
-                </div>
-                <p className="text-sm font-medium text-gray-900">{color}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Alertas */}
-        {state.alerts.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Alertas</h2>
-            <div className="space-y-2">
-              {state.alerts.map((alert) => (
-                <Alert key={alert.id} variant="destructive">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertDescription>{alert.message}</AlertDescription>
-                </Alert>
-              ))}
-            </div>
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <div className="xl:col-span-2">
+            <PatientList
+              episodes={state.episodes}
+              onSelectPatient={handleTakePatient}
+            />
+            <AwaitingTriageList
+              episodes={state.episodesAwaitingTriage}
+              onSelectPatient={handleTakePatient}
+            />
           </div>
-        )}
+          <div className="space-y-6">
+            <TriageStats stats={state.triageStats} total={state.episodes.length} />
+            <Alerts alerts={state.alerts} />
+          </div>
+        </div>
 
         {/* Botones de Acción Rápida */}
         <div className="flex flex-wrap gap-4 mb-8">
@@ -264,82 +256,6 @@ export function Dashboard() {
             Actualizar
           </Button>
         </div>
-
-        {/* Lista de Espera */}
-        <Card className="bg-white shadow-sm border">
-          <CardHeader className="bg-white">
-            <CardTitle className="text-gray-900">Lista de Espera</CardTitle>
-            <CardDescription className="text-gray-600">Pacientes esperando atención ({waitingEpisodes.length})</CardDescription>
-          </CardHeader>
-          <CardContent className="bg-white">
-            <div className="space-y-4">
-              {waitingEpisodes.map((episode) => (
-                <div
-                  key={episode.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
-                >
-                  <div className="flex items-center space-x-4">
-                    <div
-                      className="w-4 h-4 rounded-full"
-                      style={{ backgroundColor: getTriageColor(episode.triageColor).color }}
-                    />
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {episode.patient.lastName || 'Sin apellido'}, {episode.patient.firstName || 'Sin nombre'} ({getAge(episode.patient.birthDate)})
-                      </p>
-                      <p className="text-sm text-gray-500">{episode.consultationReason || 'Sin motivo especificado'}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    {(() => {
-                      const triageStyle = getTriageColor(episode.triageColor);
-                      return (
-                        <Badge className={`${triageStyle.bg} ${triageStyle.text}`}>
-                          {episode.triageColor || 'VERDE'}  
-                        </Badge>
-                      );
-                    })()}
-                    <div className="flex items-center text-sm text-gray-500">
-                      <Clock className="h-4 w-4 mr-1" />
-                      {episode.waitingTime} min
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button
-                        size="sm"
-                        onClick={() => handleTakePatient(episode.id)}
-                        className="bg-green-600 hover:bg-green-700"
-                      >
-                        TOMAR
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => handleVerFicha(episode.id)}
-                      >
-                        <Eye className="h-4 w-4 mr-1" />
-                        Ver Ficha
-                      </Button>
-                      <Button size="sm" variant="outline">
-                        <RefreshCw className="h-4 w-4 mr-1" />
-                        Cambiar Triaje
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {waitingEpisodes.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No hay pacientes en espera</p>
-                  <Button variant="outline" onClick={handleRefresh} className="mt-2">
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Actualizar lista
-                  </Button>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Modal de Registro de Paciente */}

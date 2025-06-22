@@ -9,13 +9,14 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2, Search } from "lucide-react"
 import { useHospital } from "@/lib/context"
 import type { TriageColor } from "@/lib/types"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CheckCircle } from "lucide-react"
+import { type CreatePatientRequest } from "@/lib/api"
 
 interface PatientRegistrationModalProps {
   open: boolean
@@ -29,6 +30,8 @@ const triageOptions: { value: TriageColor; label: string; color: string }[] = [
   { value: "VERDE", label: "VERDE - No urgente", color: "#16a34a" },
   { value: "AZUL", label: "AZUL - Consulta", color: "#2563eb" },
 ]
+
+const triageColorOptions: TriageColor[] = ["ROJO", "NARANJA", "AMARILLO", "VERDE", "AZUL"]
 
 export function PatientRegistrationModal({ open, onOpenChange }: PatientRegistrationModalProps) {
   const { addPatient, searchPatient, state } = useHospital()
@@ -50,6 +53,8 @@ export function PatientRegistrationModal({ open, onOpenChange }: PatientRegistra
     color_triaje: "" as TriageColor | "",
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
   const handleDniSearch = async () => {
     if (!formData.dni) return
@@ -99,27 +104,22 @@ export function PatientRegistrationModal({ open, onOpenChange }: PatientRegistra
     e.preventDefault()
     setSuccessMessage("")
     setErrors({})
+    setError(null)
+    setIsLoading(true)
 
     if (!validateForm()) return
 
-    const result = await addPatient({
-      dni: formData.dni,
-      nombre_completo: formData.nombre_completo,
-      fecha_nacimiento: formData.fecha_nacimiento || undefined,
+    const payload: CreatePatientRequest = {
+      ...formData,
       sexo: formData.sexo || undefined,
-      telefono: formData.telefono || undefined,
-      direccion: formData.direccion || undefined,
-      contacto_emergencia: formData.contacto_emergencia || undefined,
-      obra_social: formData.obra_social || undefined,
-      numero_afiliado: formData.numero_afiliado || undefined,
-      alergias_conocidas: formData.alergias_conocidas || undefined,
-      tipo_sangre: formData.tipo_sangre || undefined,
-      motivo_consulta: formData.motivo_consulta,
-      color_triaje: formData.color_triaje as TriageColor,
-    })
+      color_triaje: formData.color_triaje || undefined,
+    };
+
+    const result = await addPatient(payload)
+    setIsLoading(false)
 
     if (result.success) {
-      setSuccessMessage(result.message)
+      setSuccessMessage("Paciente registrado exitosamente. Se ha agregado a la lista de espera.")
       handleClear()
       setTimeout(() => {
         setSuccessMessage("")
@@ -145,6 +145,7 @@ export function PatientRegistrationModal({ open, onOpenChange }: PatientRegistra
       color_triaje: "",
     })
     setErrors({})
+    setError(null)
   }
 
   return (
@@ -331,24 +332,24 @@ export function PatientRegistrationModal({ open, onOpenChange }: PatientRegistra
                 {errors.motivo_consulta && <p className="text-sm text-red-500 mt-1">{errors.motivo_consulta}</p>}
               </div>
 
-              <div>
-                <Label>Color de Triaje *</Label>
-                <RadioGroup
+              <div className="space-y-2">
+                <Label htmlFor="triageColor" className="font-semibold text-gray-700">Color de Triaje</Label>
+                <Select
                   value={formData.color_triaje || ""}
-                  onValueChange={(value: TriageColor) => setFormData({ ...formData, color_triaje: value })}
-                  className="mt-2"
+                  onValueChange={(value) => setFormData({ ...formData, color_triaje: value as TriageColor })}
                 >
-                  {triageOptions.map((option) => (
-                    <div key={option.value} className="flex items-center space-x-2">
-                      <RadioGroupItem value={option.value} id={option.value} />
-                      <Label htmlFor={option.value} className="flex items-center cursor-pointer">
-                        <div className="w-4 h-4 rounded-full mr-2" style={{ backgroundColor: option.color }} />
-                        {option.label}
-                      </Label>
-                    </div>
-                  ))}
-                </RadioGroup>
-                {errors.color_triaje && <p className="text-sm text-red-500 mt-1">{errors.color_triaje}</p>}
+                  <SelectTrigger className="bg-white border-gray-300">
+                    <SelectValue placeholder="Seleccione la urgencia (opcional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {triageColorOptions.map((color) => (
+                      <SelectItem key={color} value={color}>
+                        {color}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-500">Puede dejar este campo en blanco si el paciente necesita evaluación.</p>
               </div>
             </CardContent>
           </Card>
@@ -366,6 +367,12 @@ export function PatientRegistrationModal({ open, onOpenChange }: PatientRegistra
             </Alert>
           )}
 
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
           {/* Botones */}
           <div className="flex justify-end space-x-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
@@ -374,8 +381,8 @@ export function PatientRegistrationModal({ open, onOpenChange }: PatientRegistra
             <Button type="button" variant="outline" onClick={handleClear}>
               Limpiar
             </Button>
-            <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={state.isLoading}>
-              {state.isLoading ? (
+            <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={isLoading}>
+              {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Guardando...

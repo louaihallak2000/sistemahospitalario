@@ -1,16 +1,20 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Body
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from pydantic import BaseModel
+import logging
 
 from app.core.database import get_db
 from app.api.v1.auth import get_hospital_id, get_current_user_token
 from app.schemas.episodio import (
     EpisodioCreate, EpisodioResponse, EpisodioListaEspera, EstadisticasHospital
 )
+from app.schemas.paciente import TriageColor
 from app.services.paciente_service import PacienteService
+from app.models.episodio import Episodio
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 # 💊 SCHEMAS PARA PRESCRIPCIONES
 class PrescriptionCreate(BaseModel):
@@ -50,6 +54,43 @@ class StudyResponse(BaseModel):
     orderedAt: str
     observations: str
 
+@router.get("/", response_model=List[EpisodioResponse])
+async def get_episodios(
+    hospital_id: str = Depends(get_hospital_id),
+    db: Session = Depends(get_db),
+    auth_data: dict = Depends(get_current_user_token)
+):
+    """Obtener todos los episodios del hospital"""
+    try:
+        logger.debug(f"Obteniendo episodios para hospital: {hospital_id}")
+        episodios = db.query(Episodio).filter(
+            Episodio.hospital_id == hospital_id
+        ).all()
+        logger.debug(f"Encontrados {len(episodios)} episodios")
+        return episodios
+    except Exception as e:
+        logger.error(f"Error obteniendo episodios: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al obtener episodios: {str(e)}"
+        )
+
+@router.get("/sin-triaje", response_model=List[EpisodioListaEspera])
+async def get_lista_espera_sin_triaje(
+    hospital_id: str = Depends(get_hospital_id),
+    db: Session = Depends(get_db),
+    auth_data: dict = Depends(get_current_user_token)
+):
+    """Obtener la lista de espera de pacientes activos SIN triaje asignado."""
+    try:
+        # Llama al servicio, indicando que queremos la lista sin triaje
+        result = PacienteService.get_lista_espera(db, hospital_id, estado="activo", con_triaje=False)
+        logger.info(f"Obtenida lista sin triaje: {len(result)} episodios")
+        return result
+    except Exception as e:
+        logger.error(f"Error en lista sin triaje: {e}", exc_info=True)
+        return []
+
 @router.get("/lista-espera", response_model=List[EpisodioListaEspera])
 async def get_lista_espera(
     estado: str = Query(default="activo", description="Estado de los episodios a filtrar"),
@@ -59,17 +100,13 @@ async def get_lista_espera(
 ):
     """Obtener la lista de espera de episodios para el hospital actual"""
     try:
-        import traceback
-        print(f"🔍 GET /lista-espera - hospital_id: {hospital_id}, estado: {estado}")
-        print(f"🔍 Auth data: {auth_data}")
-        
-        result = PacienteService.get_lista_espera(db, hospital_id, estado)
-        print(f"✅ Lista espera obtenida: {len(result)} episodios")
+        logger.debug(f"Obteniendo lista de espera - hospital_id: {hospital_id}, estado: {estado}")
+        # Llama al servicio, indicando que queremos la lista CON triaje
+        result = PacienteService.get_lista_espera(db, hospital_id, estado, con_triaje=True)
+        logger.info(f"Lista espera obtenida: {len(result)} episodios")
         return result
     except Exception as e:
-        print(f"❌ ERROR en lista de espera: {type(e).__name__}: {e}")
-        print(f"🔍 Traceback completo:")
-        traceback.print_exc()
+        logger.error(f"Error en lista de espera: {e}", exc_info=True)
         # Retornar lista vacía en caso de error
         return []
 
@@ -301,4 +338,19 @@ async def update_study_status(
     episodio.datos_json = json.dumps(datos_json)
     db.commit()
     
-    return {"message": "Estado actualizado correctamente"} 
+    return {"message": "Estado actualizado correctamente"}
+
+@router.put("/{episodio_id}/triaje", response_model=EpisodioResponse)
+async def update_triaje_color(
+    episodio_id: str,
+    color: TriageColor = Body(..., embed=True, description="Nuevo color de triaje"),
+    hospital_id: str = Depends(get_hospital_id),
+    db: Session = Depends(get_db),
+    auth_data: dict = Depends(get_current_user_token)
+):
+    """
+    Endpoint para actualizar el color de triaje de un episodio.
+    - Recibe el color y lo actualiza en el campo datos_json del episodio.
+    - Devuelve el episodio actualizado.
+    """
+    return PacienteService.update_triaje_color(db, episodio_id, hospital_id, color) 

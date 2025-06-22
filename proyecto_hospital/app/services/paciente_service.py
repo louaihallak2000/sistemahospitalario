@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, func
+from sqlalchemy import and_, func, case
 from fastapi import HTTPException, status
 from typing import Optional, List
 from datetime import datetime, timedelta
@@ -18,6 +18,15 @@ from app.schemas.episodio import (
 )
 
 class PacienteService:
+    @staticmethod
+    def get_all_pacientes(db: Session, hospital_id: str) -> List[PacienteHospitalResponse]:
+        """Obtiene todos los pacientes de un hospital"""
+        pacientes_hospital = db.query(PacienteHospital).filter(
+            PacienteHospital.hospital_id == hospital_id
+        ).all()
+        
+        return pacientes_hospital
+    
     @staticmethod
     def get_paciente_by_dni(db: Session, dni: str, hospital_id: str) -> Optional[PacienteHospitalResponse]:
         """Busca un paciente por DNI en el contexto de un hospital específico"""
@@ -178,9 +187,24 @@ class PacienteService:
         return db_episodio
     
     @staticmethod
-    def get_lista_espera(db: Session, hospital_id: str, estado: str = "activo") -> List[EpisodioListaEspera]:
-        """Obtiene la lista de espera de episodios para un hospital"""
-        episodios = db.query(
+    def get_lista_espera(db: Session, hospital_id: str, estado: str = "activo", con_triaje: bool = True) -> List[EpisodioListaEspera]:
+        """
+        Obtiene la lista de espera de episodios para un hospital.
+        Permite filtrar para obtener pacientes CON o SIN triaje asignado.
+        """
+        from sqlalchemy import case
+
+        # Mapeo de colores de triaje a un orden de prioridad
+        triage_order = case(
+            (func.json_extract(Episodio.datos_json, '$.color_triaje') == 'ROJO', 1),
+            (func.json_extract(Episodio.datos_json, '$.color_triaje') == 'NARANJA', 2),
+            (func.json_extract(Episodio.datos_json, '$.color_triaje') == 'AMARILLO', 3),
+            (func.json_extract(Episodio.datos_json, '$.color_triaje') == 'VERDE', 4),
+            (func.json_extract(Episodio.datos_json, '$.color_triaje') == 'AZUL', 5),
+            else_=6
+        )
+
+        query = db.query(
             Episodio.id,
             Paciente.dni.label('paciente_dni'),
             Paciente.nombre_completo.label('paciente_nombre'),
@@ -196,7 +220,17 @@ class PacienteService:
                 Episodio.hospital_id == hospital_id,
                 Episodio.estado == estado
             )
-        ).order_by(Episodio.fecha_inicio).all()
+        )
+
+        # Filtrar basado en si tienen triaje o no
+        if con_triaje:
+            # Incluir solo los que tienen un color_triaje válido
+            query = query.filter(func.json_extract(Episodio.datos_json, '$.color_triaje') != None)
+        else:
+            # Incluir solo los que NO tienen un color_triaje
+            query = query.filter(func.json_extract(Episodio.datos_json, '$.color_triaje') == None)
+
+        episodios = query.order_by(triage_order, Episodio.fecha_inicio).all()
         
         resultado = []
         for episodio in episodios:
@@ -241,35 +275,36 @@ class PacienteService:
     
     @staticmethod
     def get_estadisticas_hospital(db: Session, hospital_id: str) -> EstadisticasHospital:
-        """Obtiene estadísticas reales del hospital"""
-        # Obtener episodios activos
-        episodios_activos = db.query(Episodio).filter(
+        """Obtiene estadísticas reales del hospital usando queries SQL optimizadas."""
+        
+        # Query para contar episodios activos totales y calcular tiempo promedio
+        base_query = db.query(Episodio).filter(
             and_(
                 Episodio.hospital_id == hospital_id,
                 Episodio.estado == 'activo'
             )
-        ).all()
+        )
         
-        # Contar por color de triaje
+        total_pacientes = base_query.count()
+        
+        # Calcular tiempo de espera promedio en minutos
+        avg_wait_time_seconds = base_query.with_entities(
+            func.avg(func.strftime('%s', datetime.utcnow()) - func.strftime('%s', Episodio.fecha_inicio))
+        ).scalar() or 0
+        promedio_tiempo = avg_wait_time_seconds / 60
+        
+        # Query para contar por color de triaje usando funciones JSON de SQL
+        # Esto es más robusto y cuenta correctamente incluso si el JSON es inválido en algunas filas.
+        triage_counts_query = base_query.with_entities(
+            func.json_extract(Episodio.datos_json, '$.color_triaje').label('color'),
+            func.count(Episodio.id).label('count')
+        ).group_by('color').all()
+        
+        # Inicializar estadísticas
         stats = EstadisticasTriaje()
-        tiempos_espera = []
-        
-        for episodio in episodios_activos:
-            if episodio.datos_json:
-                try:
-                    datos = episodio.datos_json if isinstance(episodio.datos_json, dict) else json.loads(episodio.datos_json)
-                    color = datos.get('color_triaje')
-                    if color and hasattr(stats, color):
-                        setattr(stats, color, getattr(stats, color) + 1)
-                except:
-                    pass
-            
-            # Calcular tiempo de espera
-            tiempo_espera = (datetime.utcnow() - episodio.fecha_inicio).total_seconds() / 60
-            tiempos_espera.append(tiempo_espera)
-        
-        # Calcular promedio de tiempo de espera
-        promedio_tiempo = sum(tiempos_espera) / len(tiempos_espera) if tiempos_espera else 0
+        for row in triage_counts_query:
+            if row.color and hasattr(stats, row.color):
+                setattr(stats, row.color, row.count)
         
         # Generar alertas si es necesario
         alerts = []
@@ -292,6 +327,35 @@ class PacienteService:
         return EstadisticasHospital(
             triageStats=stats,
             alerts=alerts,
-            total_pacientes_espera=len(episodios_activos),
+            total_pacientes_espera=total_pacientes,
             promedio_tiempo_espera=promedio_tiempo
-        ) 
+        )
+    
+    @staticmethod
+    def update_triaje_color(db: Session, episodio_id: str, hospital_id: str, color: str):
+        """
+        Actualiza el color de triaje de un episodio.
+        - Modifica el campo datos_json para reflejar el nuevo color.
+        - Devuelve el episodio actualizado.
+        """
+        episodio = db.query(Episodio).filter(
+            Episodio.id == episodio_id,
+            Episodio.hospital_id == hospital_id
+        ).first()
+        if not episodio:
+            raise HTTPException(status_code=404, detail="Episodio no encontrado")
+        # Actualizar el campo datos_json
+        import json
+        datos = {}
+        if episodio.datos_json:
+            try:
+                datos = json.loads(episodio.datos_json) if isinstance(episodio.datos_json, str) else episodio.datos_json
+            except Exception:
+                datos = {}
+        datos['color_triaje'] = color
+        episodio.datos_json = json.dumps(datos)
+        db.commit()
+        db.refresh(episodio)
+        # Devolver el episodio actualizado (puede usar un schema de respuesta)
+        from app.schemas.episodio import EpisodioResponse
+        return EpisodioResponse.from_orm(episodio) 
