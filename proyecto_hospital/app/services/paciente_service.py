@@ -8,6 +8,7 @@ import json
 
 from app.models.paciente import Paciente, PacienteHospital
 from app.models.episodio import Episodio
+from app.models.hospital import Hospital  # Importar para resolver relaciones SQLAlchemy
 from app.schemas.paciente import (
     PacienteCreate, PacienteHospitalCreate, PacienteResponse, 
     PacienteHospitalResponse, PacienteCompletoCreate, PacienteCompletoResponse
@@ -100,11 +101,11 @@ class PacienteService:
                 'paciente_id': db_paciente.id,
                 'hospital_id': hospital_id,
                 'fecha_primera_atencion': datetime.utcnow(),
-                'telefono': datos.telefono,
-                'direccion': datos.direccion,
-                'contacto_emergencia': datos.contacto_emergencia,
-                'obra_social': datos.obra_social,
-                'numero_afiliado': datos.numero_afiliado
+                'telefono': getattr(datos, 'telefono', None),
+                'direccion': getattr(datos, 'direccion', None),
+                'contacto_emergencia': getattr(datos, 'contacto_emergencia', None),
+                'obra_social': getattr(datos, 'obra_social', None),
+                'numero_afiliado': getattr(datos, 'numero_afiliado', None)
             }
             paciente_hospital = PacienteHospital(**paciente_hospital_data)
             db.add(paciente_hospital)
@@ -113,9 +114,12 @@ class PacienteService:
             # Crear episodio inicial
             datos_triaje = {
                 'motivo_consulta': datos.motivo_consulta,
-                'color_triaje': datos.color_triaje,
                 'fecha_triaje': datetime.utcnow().isoformat()
             }
+            
+            # Solo agregar color_triaje si está presente
+            if datos.color_triaje:
+                datos_triaje['color_triaje'] = datos.color_triaje
             
             episodio_data = {
                 'paciente_id': db_paciente.id,
@@ -133,16 +137,21 @@ class PacienteService:
             db.refresh(db_paciente)
             db.refresh(db_episodio)
             
+            episodio_response = {
+                'id': str(db_episodio.id),
+                'tipo': db_episodio.tipo,
+                'estado': db_episodio.estado,
+                'fecha_inicio': db_episodio.fecha_inicio.isoformat(),
+                'motivo_consulta': datos.motivo_consulta
+            }
+            
+            # Solo agregar color_triaje si está presente
+            if datos.color_triaje:
+                episodio_response['color_triaje'] = datos.color_triaje
+            
             return PacienteCompletoResponse(
                 paciente=db_paciente,
-                episodio={
-                    'id': str(db_episodio.id),
-                    'tipo': db_episodio.tipo,
-                    'estado': db_episodio.estado,
-                    'fecha_inicio': db_episodio.fecha_inicio.isoformat(),
-                    'color_triaje': datos.color_triaje,
-                    'motivo_consulta': datos.motivo_consulta
-                }
+                episodio=episodio_response
             )
             
         except Exception as e:
@@ -345,7 +354,6 @@ class PacienteService:
         if not episodio:
             raise HTTPException(status_code=404, detail="Episodio no encontrado")
         # Actualizar el campo datos_json
-        import json
         datos = {}
         if episodio.datos_json:
             try:
@@ -356,6 +364,22 @@ class PacienteService:
         episodio.datos_json = json.dumps(datos)
         db.commit()
         db.refresh(episodio)
-        # Devolver el episodio actualizado (puede usar un schema de respuesta)
+        
+        # Convertir datos_json de string a dict para el schema de respuesta
+        episodio_dict = {
+            "id": str(episodio.id),
+            "paciente_id": str(episodio.paciente_id),
+            "hospital_id": episodio.hospital_id,
+            "tipo": episodio.tipo,
+            "medico_responsable": episodio.medico_responsable,
+            "diagnostico_principal": episodio.diagnostico_principal,
+            "resumen_clinico": episodio.resumen_clinico,
+            "numero_episodio_local": episodio.numero_episodio_local,
+            "fecha_inicio": episodio.fecha_inicio,
+            "fecha_cierre": episodio.fecha_cierre,
+            "estado": episodio.estado,
+            "datos_json": datos  # Ya es un diccionario
+        }
+        
         from app.schemas.episodio import EpisodioResponse
-        return EpisodioResponse.from_orm(episodio) 
+        return EpisodioResponse(**episodio_dict) 

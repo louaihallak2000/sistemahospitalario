@@ -65,10 +65,18 @@ class PacienteHospitalResponse(PacienteHospitalBase):
 
 # Nuevo schema para creación completa de paciente con episodio
 class PacienteCompletoCreate(PacienteBase):
+    # Campos del episodio
     motivo_consulta: str = Field(..., example="Dolor de pecho")
     color_triaje: Optional[TriageColor] = Field(None, example="AMARILLO") # Campo es ahora opcional
     tipo_episodio: Optional[str] = Field("consulta", example="consulta")
     medico_responsable: Optional[str] = Field(None, example="Dr. Alan Grant")
+    
+    # Campos de contacto (PacienteHospital)
+    telefono: Optional[str] = None
+    direccion: Optional[str] = None
+    contacto_emergencia: Optional[str] = None
+    obra_social: Optional[str] = None
+    # numero_afiliado ya está en PacienteBase
     
     class Config:
         json_encoders = {

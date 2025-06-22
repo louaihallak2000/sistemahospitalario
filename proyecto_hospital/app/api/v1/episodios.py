@@ -340,17 +340,32 @@ async def update_study_status(
     
     return {"message": "Estado actualizado correctamente"}
 
-@router.put("/{episodio_id}/triaje", response_model=EpisodioResponse)
+class TriageUpdateRequest(BaseModel):
+    color: TriageColor
+
+@router.put("/{episodio_id}/triage", response_model=EpisodioResponse)
 async def update_triaje_color(
     episodio_id: str,
-    color: TriageColor = Body(..., embed=True, description="Nuevo color de triaje"),
+    request_data: TriageUpdateRequest,
     hospital_id: str = Depends(get_hospital_id),
     db: Session = Depends(get_db),
     auth_data: dict = Depends(get_current_user_token)
 ):
     """
     Endpoint para actualizar el color de triaje de un episodio.
-    - Recibe el color y lo actualiza en el campo datos_json del episodio.
+    - Recibe un objeto con el color de triaje.
     - Devuelve el episodio actualizado.
     """
-    return PacienteService.update_triaje_color(db, episodio_id, hospital_id, color) 
+    print(f"🎨 DEBUG - update_triaje_color")
+    print(f"   episodio_id: {episodio_id}")
+    print(f"   request_data: {request_data}")
+    print(f"   color: {request_data.color}")
+    print(f"   hospital_id: {hospital_id}")
+    
+    try:
+        result = PacienteService.update_triaje_color(db, episodio_id, hospital_id, request_data.color)
+        print(f"✅ Triaje actualizado exitosamente")
+        return result
+    except Exception as e:
+        print(f"❌ Error en servicio: {e}")
+        raise 

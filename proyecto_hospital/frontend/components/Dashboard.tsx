@@ -86,13 +86,17 @@ export function Dashboard() {
   console.log("⏰ Dashboard - Episodios waiting filtrados:", waitingEpisodes.length)
   console.log("📊 Dashboard - waitingEpisodes:", waitingEpisodes)
   
+  // 🔍 DEBUGGING: Ver episodios sin triaje específicamente
+  console.log("🎨 Dashboard - Episodios sin triaje (state.episodesAwaitingTriage):", state.episodesAwaitingTriage)
+  console.log("📈 Dashboard - Cantidad episodios sin triaje:", state.episodesAwaitingTriage.length)
+  
   // 🎨 DEBUGGING: Ver los colores de triaje de cada episodio
   waitingEpisodes.forEach((episode, index) => {
     console.log(`🎨 Episodio ${index + 1}:`, {
       id: episode.id,
       triageColor: episode.triageColor,
       color_triaje: episode.color_triaje,
-      patientName: episode.patient?.nombre_completo || 'Sin nombre'
+      patientName: episode.patient?.firstName + ' ' + episode.patient?.lastName || 'Sin nombre'
     })
   })
 
