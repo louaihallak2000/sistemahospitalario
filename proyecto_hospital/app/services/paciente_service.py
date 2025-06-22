@@ -111,24 +111,17 @@ class PacienteService:
             db.add(paciente_hospital)
             db.flush()
             
-            # Crear episodio inicial
-            datos_triaje = {
-                'motivo_consulta': datos.motivo_consulta,
-                'fecha_triaje': datetime.utcnow().isoformat()
-            }
-            
-            # Solo agregar color_triaje si está presente
-            if datos.color_triaje:
-                datos_triaje['color_triaje'] = datos.color_triaje
-            
+            # 🔧 REFACTORIZACIÓN: Crear episodio inicial usando columnas explícitas
             episodio_data = {
                 'paciente_id': db_paciente.id,
                 'hospital_id': hospital_id,
-                'tipo': datos.tipo_episodio,
+                'tipo': datos.tipo_episodio or 'consulta',
                 'estado': 'activo',
                 'medico_responsable': datos.medico_responsable,
                 'diagnostico_principal': datos.motivo_consulta,
-                'datos_json': json.dumps(datos_triaje)  # Convertir a JSON string
+                'color_triaje': datos.color_triaje,  # ✅ Usar columna explícita
+                'motivo_consulta': datos.motivo_consulta,  # ✅ Usar columna explícita
+                'datos_json': json.dumps({'fecha_triaje': datetime.utcnow().isoformat()})  # Solo datos auxiliares
             }
             db_episodio = Episodio(**episodio_data)
             db.add(db_episodio)
@@ -142,12 +135,9 @@ class PacienteService:
                 'tipo': db_episodio.tipo,
                 'estado': db_episodio.estado,
                 'fecha_inicio': db_episodio.fecha_inicio.isoformat(),
-                'motivo_consulta': datos.motivo_consulta
+                'motivo_consulta': db_episodio.motivo_consulta,
+                'color_triaje': db_episodio.color_triaje
             }
-            
-            # Solo agregar color_triaje si está presente
-            if datos.color_triaje:
-                episodio_response['color_triaje'] = datos.color_triaje
             
             return PacienteCompletoResponse(
                 paciente=db_paciente,
@@ -203,13 +193,13 @@ class PacienteService:
         """
         from sqlalchemy import case
 
-        # Mapeo de colores de triaje a un orden de prioridad
+        # 🔧 REFACTORIZACIÓN: Mapeo de colores usando columna explícita
         triage_order = case(
-            (func.json_extract(Episodio.datos_json, '$.color_triaje') == 'ROJO', 1),
-            (func.json_extract(Episodio.datos_json, '$.color_triaje') == 'NARANJA', 2),
-            (func.json_extract(Episodio.datos_json, '$.color_triaje') == 'AMARILLO', 3),
-            (func.json_extract(Episodio.datos_json, '$.color_triaje') == 'VERDE', 4),
-            (func.json_extract(Episodio.datos_json, '$.color_triaje') == 'AZUL', 5),
+            (Episodio.color_triaje == 'ROJO', 1),
+            (Episodio.color_triaje == 'NARANJA', 2),
+            (Episodio.color_triaje == 'AMARILLO', 3),
+            (Episodio.color_triaje == 'VERDE', 4),
+            (Episodio.color_triaje == 'AZUL', 5),
             else_=6
         )
 
@@ -222,7 +212,8 @@ class PacienteService:
             Episodio.fecha_inicio,
             Episodio.estado,
             Episodio.medico_responsable,
-            Episodio.diagnostico_principal,
+            Episodio.color_triaje,  # ✅ Usar columna explícita
+            Episodio.motivo_consulta,  # ✅ Usar columna explícita
             Episodio.datos_json
         ).join(Paciente, Episodio.paciente_id == Paciente.id).filter(
             and_(
@@ -231,13 +222,13 @@ class PacienteService:
             )
         )
 
-        # Filtrar basado en si tienen triaje o no
+        # 🔧 REFACTORIZACIÓN: Filtrar basado en columna explícita
         if con_triaje:
             # Incluir solo los que tienen un color_triaje válido
-            query = query.filter(func.json_extract(Episodio.datos_json, '$.color_triaje') != None)
+            query = query.filter(Episodio.color_triaje != None)
         else:
             # Incluir solo los que NO tienen un color_triaje
-            query = query.filter(func.json_extract(Episodio.datos_json, '$.color_triaje') == None)
+            query = query.filter(Episodio.color_triaje == None)
 
         episodios = query.order_by(triage_order, Episodio.fecha_inicio).all()
         
@@ -252,20 +243,10 @@ class PacienteService:
                    (today.month == episodio.fecha_nacimiento.month and today.day < episodio.fecha_nacimiento.day):
                     edad -= 1
             
-            # Extraer información de triaje del JSON
-            datos_triaje = {}
-            if episodio.datos_json:
-                try:
-                    if isinstance(episodio.datos_json, str):
-                        datos_triaje = json.loads(episodio.datos_json)
-                    else:
-                        datos_triaje = episodio.datos_json
-                except:
-                    datos_triaje = {}
-            
             # Calcular tiempo de espera
             tiempo_espera = int((datetime.utcnow() - episodio.fecha_inicio).total_seconds() / 60)
             
+            # 🔧 REFACTORIZACIÓN: Usar columnas explícitas directamente
             resultado.append(EpisodioListaEspera(
                 id=episodio.id,
                 paciente_dni=episodio.paciente_dni,
@@ -275,8 +256,8 @@ class PacienteService:
                 fecha_inicio=episodio.fecha_inicio,
                 estado=episodio.estado,
                 medico_responsable=episodio.medico_responsable,
-                motivo_consulta=datos_triaje.get('motivo_consulta') or episodio.diagnostico_principal,
-                color_triaje=datos_triaje.get('color_triaje'),
+                motivo_consulta=episodio.motivo_consulta,  # ✅ Columna explícita
+                color_triaje=episodio.color_triaje,  # ✅ Columna explícita
                 tiempo_espera_minutos=tiempo_espera
             ))
         
@@ -302,12 +283,11 @@ class PacienteService:
         ).scalar() or 0
         promedio_tiempo = avg_wait_time_seconds / 60
         
-        # Query para contar por color de triaje usando funciones JSON de SQL
-        # Esto es más robusto y cuenta correctamente incluso si el JSON es inválido en algunas filas.
+        # 🔧 REFACTORIZACIÓN: Query para contar por color de triaje usando columna explícita
         triage_counts_query = base_query.with_entities(
-            func.json_extract(Episodio.datos_json, '$.color_triaje').label('color'),
+            Episodio.color_triaje.label('color'),
             func.count(Episodio.id).label('count')
-        ).group_by('color').all()
+        ).group_by(Episodio.color_triaje).all()
         
         # Inicializar estadísticas
         stats = EstadisticasTriaje()
@@ -344,7 +324,7 @@ class PacienteService:
     def update_triaje_color(db: Session, episodio_id: str, hospital_id: str, color: str):
         """
         Actualiza el color de triaje de un episodio.
-        - Modifica el campo datos_json para reflejar el nuevo color.
+        - Modifica la columna explícita color_triaje.
         - Devuelve el episodio actualizado.
         """
         episodio = db.query(Episodio).filter(
@@ -353,19 +333,21 @@ class PacienteService:
         ).first()
         if not episodio:
             raise HTTPException(status_code=404, detail="Episodio no encontrado")
-        # Actualizar el campo datos_json
-        datos = {}
-        if episodio.datos_json:
-            try:
-                datos = json.loads(episodio.datos_json) if isinstance(episodio.datos_json, str) else episodio.datos_json
-            except Exception:
-                datos = {}
-        datos['color_triaje'] = color
-        episodio.datos_json = json.dumps(datos)
+        
+        # 🔧 REFACTORIZACIÓN: Actualizar columna explícita
+        episodio.color_triaje = color
         db.commit()
         db.refresh(episodio)
         
-        # Convertir datos_json de string a dict para el schema de respuesta
+        # Preparar datos_json para compatibilidad (puede contener otros datos)
+        datos_json = {}
+        if episodio.datos_json:
+            try:
+                datos_json = json.loads(episodio.datos_json) if isinstance(episodio.datos_json, str) else episodio.datos_json
+            except Exception:
+                datos_json = {}
+        
+        # Convertir a formato de respuesta
         episodio_dict = {
             "id": str(episodio.id),
             "paciente_id": str(episodio.paciente_id),
@@ -378,7 +360,7 @@ class PacienteService:
             "fecha_inicio": episodio.fecha_inicio,
             "fecha_cierre": episodio.fecha_cierre,
             "estado": episodio.estado,
-            "datos_json": datos  # Ya es un diccionario
+            "datos_json": datos_json  # Datos auxiliares como JSON
         }
         
         from app.schemas.episodio import EpisodioResponse

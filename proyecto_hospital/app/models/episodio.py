@@ -18,6 +18,12 @@ class Episodio(Base):
     medico_responsable = Column(String(255))
     diagnostico_principal = Column(Text)
     resumen_clinico = Column(Text)
+    
+    # 🔧 REFACTORIZACIÓN: Nuevas columnas explícitas
+    color_triaje = Column(String(20))  # ROJO, NARANJA, AMARILLO, VERDE, AZUL
+    motivo_consulta = Column(Text)     # Motivo de consulta del paciente
+    
+    # Campo JSON para datos adicionales (prescripciones, estudios, etc.)
     datos_json = Column(JSON)
     
     # Relaciones - usando strings para evitar imports circulares
