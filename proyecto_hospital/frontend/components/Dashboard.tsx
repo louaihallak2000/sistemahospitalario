@@ -1,18 +1,16 @@
 "use client"
 
-import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Hospital, LogOut, UserPlus, List, Package, Clock, User, AlertTriangle, Eye, RefreshCw, ClipboardPlus, HeartPulse } from "lucide-react"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { useHospital } from "@/lib/context"
-import { PatientRegistrationModal } from "./PatientRegistrationModal"
-import type { TriageColor, Episode } from "@/lib/types"
-import { PatientList } from "./PatientList"
-import { TriageStats } from "./TriageStats"
+import type { TriageColor } from "@/lib/types"
+import { Hospital, LogOut, RefreshCw, UserPlus } from "lucide-react"
+import { useState } from "react"
 import { Alerts } from "./Alerts"
 import { AwaitingTriageList } from "./AwaitingTriageList"
+import { PatientList } from "./PatientList"
+import { PatientRegistrationModal } from "./PatientRegistrationModal"
+import { TriageStats } from "./TriageStats"
 
 const triageColors: Record<TriageColor, { bg: string; text: string; color: string }> = {
   ROJO: { bg: "bg-red-100", text: "text-red-800", color: "#dc2626" },
@@ -25,50 +23,50 @@ const triageColors: Record<TriageColor, { bg: string; text: string; color: strin
 // 🛡️ FUNCIÓN DEFENSIVA: Mapear colores de triaje con validación
 const getTriageColor = (triageColor?: string | null) => {
   console.log("🎨 getTriageColor - valor recibido:", triageColor, "tipo:", typeof triageColor)
-  
+
   if (!triageColor) {
     console.warn("⚠️ triageColor es null/undefined, usando VERDE por defecto")
     return triageColors.VERDE
   }
-  
+
   // Normalizar a mayúsculas
   const normalizedColor = triageColor.toString().toUpperCase()
   console.log("🔄 Color normalizado:", normalizedColor)
-  
+
   // Mapeo de posibles variaciones
   const colorMapping: Record<string, TriageColor> = {
     'ROJO': 'ROJO',
     'RED': 'ROJO',
     'CRITICAL': 'ROJO',
     'CRITICO': 'ROJO',
-    
+
     'NARANJA': 'NARANJA',
     'ORANGE': 'NARANJA',
     'URGENT': 'NARANJA',
     'URGENTE': 'NARANJA',
-    
+
     'AMARILLO': 'AMARILLO',
     'YELLOW': 'AMARILLO',
     'SEMI-URGENT': 'AMARILLO',
     'SEMIURGENTE': 'AMARILLO',
-    
+
     'VERDE': 'VERDE',
     'GREEN': 'VERDE',
     'NON-URGENT': 'VERDE',
     'NO-URGENTE': 'VERDE',
-    
+
     'AZUL': 'AZUL',
     'BLUE': 'AZUL',
     'CONSULTATION': 'AZUL',
     'CONSULTA': 'AZUL'
   }
-  
+
   const mappedColor = colorMapping[normalizedColor]
   if (mappedColor) {
     console.log("✅ Color mapeado exitosamente:", normalizedColor, "→", mappedColor)
     return triageColors[mappedColor]
   }
-  
+
   console.warn("⚠️ Color no reconocido:", normalizedColor, "usando VERDE por defecto")
   return triageColors.VERDE
 }
@@ -78,18 +76,18 @@ export function Dashboard() {
   const [showPatientModal, setShowPatientModal] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const triageStats = getTriageStats()
-  
+
   // 🔍 DEBUGGING: Ver todos los episodios y el filtrado
   console.log("🏥 Dashboard - Total episodios en state:", state.episodes.length)
   console.log("📋 Dashboard - Episodios completos:", state.episodes)
   const waitingEpisodes = state.episodes.filter((e) => e.status === "waiting")
   console.log("⏰ Dashboard - Episodios waiting filtrados:", waitingEpisodes.length)
   console.log("📊 Dashboard - waitingEpisodes:", waitingEpisodes)
-  
+
   // 🔍 DEBUGGING: Ver episodios sin triaje específicamente
   console.log("🎨 Dashboard - Episodios sin triaje (state.episodesAwaitingTriage):", state.episodesAwaitingTriage)
   console.log("📈 Dashboard - Cantidad episodios sin triaje:", state.episodesAwaitingTriage.length)
-  
+
   // 🎨 DEBUGGING: Ver los colores de triaje de cada episodio
   waitingEpisodes.forEach((episode, index) => {
     console.log(`🎨 Episodio ${index + 1}:`, {
@@ -119,7 +117,7 @@ export function Dashboard() {
     }
 
     console.log("🔧 Preparando datos básicos del paciente...")
-    
+
     // 🎯 USAR DATOS EXISTENTES SIN MODIFICAR TIPOS
     const patientData = {
       patient: {
@@ -134,13 +132,13 @@ export function Dashboard() {
       },
       medicalHistory: []
     }
-    
+
     console.log("📝 Configurando paciente seleccionado...")
     setSelectedPatient(patientData)
-    
+
     console.log("🔄 Navegando a pantalla de paciente INMEDIATAMENTE...")
     dispatch({ type: "SET_SCREEN", payload: "patient" })
-    
+
     console.log("✅ NAVEGACIÓN COMPLETADA - SIN ERRORES")
   }
 
@@ -154,7 +152,7 @@ export function Dashboard() {
     }
 
     console.log("🔧 Preparando datos para Ver Ficha...")
-    
+
     // 🎯 MISMO FORMATO QUE handleTakePatient PERO SIN CAMBIAR STATUS
     const patientData = {
       patient: {
@@ -169,13 +167,13 @@ export function Dashboard() {
       },
       medicalHistory: []
     }
-    
+
     console.log("📝 Configurando paciente seleccionado para Ver Ficha...")
     setSelectedPatient(patientData)
-    
+
     console.log("🔄 Navegando a ficha del paciente...")
     dispatch({ type: "SET_SCREEN", payload: "patient" })
-    
+
     console.log("✅ VER FICHA - NAVEGACIÓN COMPLETADA")
   }
 
@@ -186,11 +184,6 @@ export function Dashboard() {
     } finally {
       setIsRefreshing(false)
     }
-  }
-
-  const navigateToAdmission = () => {
-    console.log("🏥 Navegando a Admisión...")
-    dispatch({ type: "SET_SCREEN", payload: "admission" })
   }
 
   const navigateToNursing = () => {
@@ -207,9 +200,9 @@ export function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+    <div className="h-screen flex flex-col bg-gray-50">
+      {/* Header - Fixed */}
+      <header className="bg-white shadow-sm border-b shrink-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
@@ -233,51 +226,81 @@ export function Dashboard() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          <div className="xl:col-span-2">
-            <PatientList
-              episodes={state.episodes}
-              onSelectPatient={handleTakePatient}
-            />
-            <AwaitingTriageList
-              episodes={state.episodesAwaitingTriage}
-              onSelectPatient={handleTakePatient}
-            />
-          </div>
-          <div className="space-y-6">
-            <TriageStats stats={state.triageStats} total={state.episodes.length} />
-            <Alerts alerts={state.alerts} />
+      {/* Botones de Acción Rápida - Fixed */}
+      <div className="bg-white border-b px-4 sm:px-6 lg:px-8 py-4 shrink-0">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-wrap gap-4">
+            <Button onClick={() => setShowPatientModal(true)} className="bg-blue-600 hover:bg-blue-700">
+              <UserPlus className="h-4 w-4 mr-2" />
+              Nuevo Paciente
+            </Button>
+            <Button variant="outline" onClick={handleRefresh} disabled={isRefreshing}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
+              Actualizar
+            </Button>
           </div>
         </div>
+      </div>
 
-        {/* Botones de Acción Rápida */}
-        <div className="flex flex-wrap gap-4 mb-8">
-          <Button onClick={() => setShowPatientModal(true)} className="bg-blue-600 hover:bg-blue-700">
-            <UserPlus className="h-4 w-4 mr-2" />
-            Nuevo Paciente
-          </Button>
-          <Button variant="outline" onClick={navigateToAdmission}>
-            <ClipboardPlus className="h-4 w-4 mr-2" />
-            Admisión
-          </Button>
-          <Button variant="outline" onClick={navigateToNursing}>
-            <HeartPulse className="h-4 w-4 mr-2" />
-            Enfermería
-          </Button>
-          <Button variant="outline">
-            <List className="h-4 w-4 mr-2" />
-            Lista Espera
-          </Button>
-          <Button variant="outline">
-            <Package className="h-4 w-4 mr-2" />
-            Inventario
-          </Button>
-          <Button variant="outline" onClick={handleRefresh} disabled={isRefreshing}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
-            Actualizar
-          </Button>
-        </div>
+      {/* Main Content - Scrollable */}
+      <div className="flex-1 overflow-hidden">
+        <ScrollArea className="h-full w-full">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+              {/* Listas de Pacientes - Columna Principal */}
+              <div className="xl:col-span-2 space-y-6">
+                {/* Lista de Espera Principal */}
+                <div className="w-full">
+                  <PatientList
+                    episodes={state.episodes}
+                    onSelectPatient={handleTakePatient}
+                  />
+                </div>
+
+                {/* Lista de Espera de Triaje */}
+                <div className="w-full">
+                  <AwaitingTriageList
+                    episodes={state.episodesAwaitingTriage}
+                    onSelectPatient={handleVerFicha}
+                  />
+                </div>
+              </div>
+
+              {/* Sidebar - Estadísticas y Alertas */}
+              <div className="xl:col-span-1 space-y-6">
+                <div className="sticky top-0 space-y-6">
+                  <TriageStats stats={state.triageStats} total={state.episodes.length} />
+                  <Alerts alerts={state.alerts} />
+                </div>
+              </div>
+            </div>
+
+            {/* Información de Estado del Sistema */}
+            <div className="mt-8 pt-6 border-t border-gray-200">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div className="bg-white p-4 rounded-lg shadow-sm border">
+                  <div className="text-2xl font-bold text-blue-600">{state.episodes.length}</div>
+                  <div className="text-sm text-gray-600">Pacientes en Lista</div>
+                </div>
+                <div className="bg-white p-4 rounded-lg shadow-sm border">
+                  <div className="text-2xl font-bold text-orange-600">{state.episodesAwaitingTriage.length}</div>
+                  <div className="text-sm text-gray-600">Esperando Triaje</div>
+                </div>
+                <div className="bg-white p-4 rounded-lg shadow-sm border">
+                  <div className="text-2xl font-bold text-green-600">{state.triageStats.total}</div>
+                  <div className="text-sm text-gray-600">Total Atendidos</div>
+                </div>
+                <div className="bg-white p-4 rounded-lg shadow-sm border">
+                  <div className="text-2xl font-bold text-red-600">{state.triageStats.critical || 0}</div>
+                  <div className="text-sm text-gray-600">Casos Críticos</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Espacio adicional para scroll */}
+            <div className="h-20"></div>
+          </div>
+        </ScrollArea>
       </div>
 
       {/* Modal de Registro de Paciente */}

@@ -2,15 +2,15 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, Hospital } from "lucide-react"
 import { useHospital } from "@/lib/context"
+import { Hospital, Loader2 } from "lucide-react"
+import { useState } from "react"
 
 export function LoginScreen() {
   const { state, login } = useHospital()
@@ -108,9 +108,9 @@ export function LoginScreen() {
           <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
             <p className="text-sm text-blue-800 font-semibold mb-1">Credenciales de prueba:</p>
             <div className="space-y-0.5">
-              <p className="text-sm text-blue-700"><span className="font-medium">Usuario:</span> admin</p>
-              <p className="text-sm text-blue-700"><span className="font-medium">Contraseña:</span> admin123</p>
-              <p className="text-sm text-blue-700"><span className="font-medium">Hospital:</span> HOSP001</p>
+              <p className="text-sm text-blue-700"><span className="font-medium">Usuario:</span> dr.martinez</p>
+              <p className="text-sm text-blue-700"><span className="font-medium">Contraseña:</span> medico123</p>
+              <p className="text-sm text-blue-700"><span className="font-medium">Hospital:</span> HG001</p>
             </div>
           </div>
         </CardContent>

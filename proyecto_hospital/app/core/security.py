@@ -27,4 +27,8 @@ def verify_token(token: str):
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         return payload
     except JWTError:
-        return None 
+        return None
+
+def decode_token(token: str):
+    """Alias para verify_token para compatibilidad con WebSocket"""
+    return verify_token(token) 

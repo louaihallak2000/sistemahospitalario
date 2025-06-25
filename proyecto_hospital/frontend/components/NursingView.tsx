@@ -1,30 +1,31 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
 import { useHospital } from "@/lib/context"
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "./ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table"
+import {
+  Activity,
+  ArrowLeft,
+  Clock,
+  Eye,
+  FileText,
+  HeartPulse,
+  Pill,
+  Plus,
+  RefreshCw,
+  Stethoscope,
+  Users
+} from "lucide-react"
+import { useEffect, useState } from "react"
+import { Badge } from "./ui/badge"
 import { Button } from "./ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog"
 import { Input } from "./ui/input"
 import { Label } from "./ui/label"
-import { Textarea } from "./ui/textarea"
+import { ScrollArea } from "./ui/scroll-area"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
-import { Badge } from "./ui/badge"
-import { 
-  HeartPulse, 
-  Thermometer, 
-  Activity, 
-  Clock, 
-  FileText, 
-  Stethoscope,
-  Users,
-  AlertCircle,
-  CheckCircle,
-  Plus,
-  ArrowLeft
-} from "lucide-react"
+import { Textarea } from "./ui/textarea"
 
 // Define la interfaz para un paciente admitido
 interface AdmittedPatient {
@@ -47,6 +48,10 @@ interface AdmittedPatient {
   } | null
   registros_recientes?: any[]
   tiempo_desde_ultimo_registro?: number | null
+  prescriptions?: any[]
+  triageColor?: string
+  status?: string
+  motivo_consulta?: string
 }
 
 interface VitalSignsForm {
@@ -84,6 +89,7 @@ export function NursingView() {
   const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState("vital-signs")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [lastUpdate, setLastUpdate] = useState(Date.now())
 
   // Estados para formularios
   const [vitalSignsForm, setVitalSignsForm] = useState<VitalSignsForm>({
@@ -116,14 +122,17 @@ export function NursingView() {
 
   useEffect(() => {
     loadData()
-  }, [])
+  }, [lastUpdate])
 
   const loadData = async () => {
     setIsLoading(true)
     try {
+      console.log("🔄 Cargando datos de enfermería...")
       const data = await fetchAdmittedPatients()
+      console.log("📊 Datos recibidos:", data)
       if (data) {
         setPatients(data)
+        console.log("✅ Pacientes establecidos:", data.length)
       }
     } catch (error) {
       console.error("Error cargando datos de enfermería:", error)
@@ -132,7 +141,13 @@ export function NursingView() {
     }
   }
 
+  const refrescarDatos = () => {
+    console.log("🔄 Refrescando datos de enfermería manualmente...")
+    setLastUpdate(Date.now())
+  }
+
   const handleRegisterCare = (patient: AdmittedPatient) => {
+    console.log("👩‍⚕️ Registrando cuidado para:", patient.paciente_nombre)
     setSelectedPatient(patient)
     setVitalSignsForm(prev => ({ ...prev, episodio_id: patient.episodio_id }))
     setNursingNoteForm(prev => ({ ...prev, episodio_id: patient.episodio_id }))
@@ -145,7 +160,7 @@ export function NursingView() {
     try {
       setIsLoading(true)
       await registerVitalSigns(vitalSignsForm)
-      
+
       // Resetear formulario
       setVitalSignsForm({
         episodio_id: selectedPatient.episodio_id,
@@ -161,11 +176,11 @@ export function NursingView() {
         estado_conciencia: "Alerta",
         observaciones: ""
       })
-      
+
       // Recargar datos
       await loadData()
       setIsDialogOpen(false)
-      
+
       alert("Signos vitales registrados exitosamente")
     } catch (error) {
       console.error("Error registrando signos vitales:", error)
@@ -181,7 +196,7 @@ export function NursingView() {
     try {
       setIsLoading(true)
       await registerNursingNote(nursingNoteForm)
-      
+
       // Resetear formulario
       setNursingNoteForm({
         episodio_id: selectedPatient.episodio_id,
@@ -195,11 +210,11 @@ export function NursingView() {
         turno: "Mañana",
         requiere_seguimiento: "N"
       })
-      
+
       // Recargar datos
       await loadData()
       setIsDialogOpen(false)
-      
+
       alert("Nota de enfermería registrada exitosamente")
     } catch (error) {
       console.error("Error registrando nota de enfermería:", error)
@@ -235,7 +250,7 @@ export function NursingView() {
 
   const getTimeSinceLastRecord = (minutes: number | null | undefined) => {
     if (!minutes) return <Badge variant="outline">Sin registros</Badge>
-    
+
     if (minutes < 60) {
       return <Badge variant="default">{minutes} min</Badge>
     } else if (minutes < 1440) {
@@ -247,9 +262,55 @@ export function NursingView() {
     }
   }
 
+  const getTriageColorBadge = (color?: string) => {
+    if (!color) return <Badge variant="outline">Sin triaje</Badge>
+
+    const colors: Record<string, string> = {
+      'ROJO': 'bg-red-100 text-red-800 border-red-300',
+      'NARANJA': 'bg-orange-100 text-orange-800 border-orange-300',
+      'AMARILLO': 'bg-yellow-100 text-yellow-800 border-yellow-300',
+      'VERDE': 'bg-green-100 text-green-800 border-green-300',
+      'AZUL': 'bg-blue-100 text-blue-800 border-blue-300'
+    }
+
+    return (
+      <Badge className={colors[color] || 'bg-gray-100 text-gray-800'}>
+        {color}
+      </Badge>
+    )
+  }
+
+  const getPrescriptionsInfo = (patient: AdmittedPatient) => {
+    const prescriptions = patient.prescriptions || []
+    const activePrescriptions = prescriptions.filter(p => p.status === 'active')
+
+    if (activePrescriptions.length === 0) {
+      return <span className="text-gray-500 italic">Sin medicamentos</span>
+    }
+
+    return (
+      <div className="space-y-1">
+        {activePrescriptions.slice(0, 2).map((prescription: any, index: number) => (
+          <div key={index} className="text-sm">
+            <span className="font-medium">{prescription.medication}</span>
+            <span className="text-gray-600 ml-1">({prescription.dose})</span>
+          </div>
+        ))}
+        {activePrescriptions.length > 2 && (
+          <div className="text-xs text-blue-600">+{activePrescriptions.length - 2} más</div>
+        )}
+      </div>
+    )
+  }
+
   const navigateToHome = () => {
     dispatch({ type: "SET_SCREEN", payload: "dashboard" })
   }
+
+  // Calcular contadores totales
+  const totalPrescriptions = patients.reduce((total, p) => total + (p.prescriptions?.length || 0), 0)
+  const activePrescriptions = patients.reduce((total, p) =>
+    total + (p.prescriptions?.filter(pr => pr.status === 'active').length || 0), 0)
 
   // Componente del formulario de signos vitales
   const VitalSignsFormComponent = () => (
@@ -261,9 +322,9 @@ export function NursingView() {
             id="presion_sistolica"
             type="number"
             value={vitalSignsForm.presion_arterial_sistolica || ""}
-            onChange={(e) => setVitalSignsForm(prev => ({ 
-              ...prev, 
-              presion_arterial_sistolica: e.target.value ? parseInt(e.target.value) : null 
+            onChange={(e) => setVitalSignsForm(prev => ({
+              ...prev,
+              presion_arterial_sistolica: e.target.value ? parseInt(e.target.value) : null
             }))}
             placeholder="120"
           />
@@ -274,9 +335,9 @@ export function NursingView() {
             id="presion_diastolica"
             type="number"
             value={vitalSignsForm.presion_arterial_diastolica || ""}
-            onChange={(e) => setVitalSignsForm(prev => ({ 
-              ...prev, 
-              presion_arterial_diastolica: e.target.value ? parseInt(e.target.value) : null 
+            onChange={(e) => setVitalSignsForm(prev => ({
+              ...prev,
+              presion_arterial_diastolica: e.target.value ? parseInt(e.target.value) : null
             }))}
             placeholder="80"
           />
@@ -290,29 +351,29 @@ export function NursingView() {
             id="frecuencia_cardiaca"
             type="number"
             value={vitalSignsForm.frecuencia_cardiaca || ""}
-            onChange={(e) => setVitalSignsForm(prev => ({ 
-              ...prev, 
-              frecuencia_cardiaca: e.target.value ? parseInt(e.target.value) : null 
+            onChange={(e) => setVitalSignsForm(prev => ({
+              ...prev,
+              frecuencia_cardiaca: e.target.value ? parseInt(e.target.value) : null
             }))}
             placeholder="72"
           />
         </div>
         <div>
-          <Label htmlFor="frecuencia_respiratoria">Frecuencia Respiratoria (rpm)</Label>
+          <Label htmlFor="frecuencia_respiratoria">Frecuencia Respiratoria (/min)</Label>
           <Input
             id="frecuencia_respiratoria"
             type="number"
             value={vitalSignsForm.frecuencia_respiratoria || ""}
-            onChange={(e) => setVitalSignsForm(prev => ({ 
-              ...prev, 
-              frecuencia_respiratoria: e.target.value ? parseInt(e.target.value) : null 
+            onChange={(e) => setVitalSignsForm(prev => ({
+              ...prev,
+              frecuencia_respiratoria: e.target.value ? parseInt(e.target.value) : null
             }))}
             placeholder="16"
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         <div>
           <Label htmlFor="temperatura">Temperatura (°C)</Label>
           <Input
@@ -320,9 +381,9 @@ export function NursingView() {
             type="number"
             step="0.1"
             value={vitalSignsForm.temperatura || ""}
-            onChange={(e) => setVitalSignsForm(prev => ({ 
-              ...prev, 
-              temperatura: e.target.value ? parseFloat(e.target.value) : null 
+            onChange={(e) => setVitalSignsForm(prev => ({
+              ...prev,
+              temperatura: e.target.value ? parseFloat(e.target.value) : null
             }))}
             placeholder="36.5"
           />
@@ -333,41 +394,11 @@ export function NursingView() {
             id="saturacion_oxigeno"
             type="number"
             value={vitalSignsForm.saturacion_oxigeno || ""}
-            onChange={(e) => setVitalSignsForm(prev => ({ 
-              ...prev, 
-              saturacion_oxigeno: e.target.value ? parseFloat(e.target.value) : null 
+            onChange={(e) => setVitalSignsForm(prev => ({
+              ...prev,
+              saturacion_oxigeno: e.target.value ? parseInt(e.target.value) : null
             }))}
             placeholder="98"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-4">
-        <div>
-          <Label htmlFor="peso">Peso (kg)</Label>
-          <Input
-            id="peso"
-            type="number"
-            step="0.1"
-            value={vitalSignsForm.peso || ""}
-            onChange={(e) => setVitalSignsForm(prev => ({ 
-              ...prev, 
-              peso: e.target.value ? parseFloat(e.target.value) : null 
-            }))}
-            placeholder="70"
-          />
-        </div>
-        <div>
-          <Label htmlFor="talla">Talla (cm)</Label>
-          <Input
-            id="talla"
-            type="number"
-            value={vitalSignsForm.talla || ""}
-            onChange={(e) => setVitalSignsForm(prev => ({ 
-              ...prev, 
-              talla: e.target.value ? parseFloat(e.target.value) : null 
-            }))}
-            placeholder="175"
           />
         </div>
         <div>
@@ -378,19 +409,49 @@ export function NursingView() {
             min="0"
             max="10"
             value={vitalSignsForm.dolor_escala || ""}
-            onChange={(e) => setVitalSignsForm(prev => ({ 
-              ...prev, 
-              dolor_escala: e.target.value ? parseInt(e.target.value) : null 
+            onChange={(e) => setVitalSignsForm(prev => ({
+              ...prev,
+              dolor_escala: e.target.value ? parseInt(e.target.value) : null
             }))}
             placeholder="0"
           />
         </div>
       </div>
 
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="peso">Peso (kg)</Label>
+          <Input
+            id="peso"
+            type="number"
+            step="0.1"
+            value={vitalSignsForm.peso || ""}
+            onChange={(e) => setVitalSignsForm(prev => ({
+              ...prev,
+              peso: e.target.value ? parseFloat(e.target.value) : null
+            }))}
+            placeholder="70"
+          />
+        </div>
+        <div>
+          <Label htmlFor="talla">Talla (cm)</Label>
+          <Input
+            id="talla"
+            type="number"
+            value={vitalSignsForm.talla || ""}
+            onChange={(e) => setVitalSignsForm(prev => ({
+              ...prev,
+              talla: e.target.value ? parseInt(e.target.value) : null
+            }))}
+            placeholder="170"
+          />
+        </div>
+      </div>
+
       <div>
         <Label htmlFor="estado_conciencia">Estado de Conciencia</Label>
-        <Select 
-          value={vitalSignsForm.estado_conciencia} 
+        <Select
+          value={vitalSignsForm.estado_conciencia}
           onValueChange={(value) => setVitalSignsForm(prev => ({ ...prev, estado_conciencia: value }))}
         >
           <SelectTrigger>
@@ -407,17 +468,21 @@ export function NursingView() {
       </div>
 
       <div>
-        <Label htmlFor="observaciones_vitales">Observaciones</Label>
+        <Label htmlFor="observaciones">Observaciones</Label>
         <Textarea
-          id="observaciones_vitales"
+          id="observaciones"
           value={vitalSignsForm.observaciones}
           onChange={(e) => setVitalSignsForm(prev => ({ ...prev, observaciones: e.target.value }))}
-          placeholder="Observaciones adicionales sobre los signos vitales..."
+          placeholder="Observaciones adicionales..."
           rows={3}
         />
       </div>
 
-      <Button onClick={handleVitalSignsSubmit} disabled={isLoading} className="w-full">
+      <Button
+        onClick={handleVitalSignsSubmit}
+        disabled={isLoading}
+        className="w-full"
+      >
         {isLoading ? "Guardando..." : "Registrar Signos Vitales"}
       </Button>
     </div>
@@ -429,8 +494,8 @@ export function NursingView() {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor="tipo_registro">Tipo de Registro</Label>
-          <Select 
-            value={nursingNoteForm.tipo_registro} 
+          <Select
+            value={nursingNoteForm.tipo_registro}
             onValueChange={(value) => setNursingNoteForm(prev => ({ ...prev, tipo_registro: value }))}
           >
             <SelectTrigger>
@@ -446,8 +511,8 @@ export function NursingView() {
         </div>
         <div>
           <Label htmlFor="turno">Turno</Label>
-          <Select 
-            value={nursingNoteForm.turno} 
+          <Select
+            value={nursingNoteForm.turno}
             onValueChange={(value) => setNursingNoteForm(prev => ({ ...prev, turno: value }))}
           >
             <SelectTrigger>
@@ -518,8 +583,8 @@ export function NursingView() {
           </div>
           <div>
             <Label htmlFor="via_administracion">Vía</Label>
-            <Select 
-              value={nursingNoteForm.via_administracion} 
+            <Select
+              value={nursingNoteForm.via_administracion}
               onValueChange={(value) => setNursingNoteForm(prev => ({ ...prev, via_administracion: value }))}
             >
               <SelectTrigger>
@@ -539,8 +604,8 @@ export function NursingView() {
 
       <div>
         <Label htmlFor="requiere_seguimiento">¿Requiere Seguimiento?</Label>
-        <Select 
-          value={nursingNoteForm.requiere_seguimiento} 
+        <Select
+          value={nursingNoteForm.requiere_seguimiento}
           onValueChange={(value) => setNursingNoteForm(prev => ({ ...prev, requiere_seguimiento: value }))}
         >
           <SelectTrigger>
@@ -553,9 +618,9 @@ export function NursingView() {
         </Select>
       </div>
 
-      <Button 
-        onClick={handleNursingNoteSubmit} 
-        disabled={isLoading || !nursingNoteForm.descripcion} 
+      <Button
+        onClick={handleNursingNoteSubmit}
+        disabled={isLoading || !nursingNoteForm.descripcion}
         className="w-full"
       >
         {isLoading ? "Guardando..." : "Registrar Nota"}
@@ -564,9 +629,9 @@ export function NursingView() {
   )
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className="h-screen flex flex-col bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
+      <div className="bg-white border-b border-gray-200 px-6 py-4 shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="sm" onClick={navigateToHome}>
@@ -583,121 +648,196 @@ export function NursingView() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <Users className="h-4 w-4" />
-            Hospital: {state.user?.hospital_id || "N/A"}
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={refrescarDatos}
+              disabled={isLoading}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              Actualizar
+            </Button>
+
+            <Badge variant="outline" className="bg-green-50">
+              <Users className="h-4 w-4 mr-1" />
+              {patients.length} pacientes
+            </Badge>
+            <Badge variant="outline" className="bg-blue-50 text-blue-700">
+              <Pill className="h-4 w-4 mr-1" />
+              {activePrescriptions} activas
+            </Badge>
+            <Badge variant="outline" className="bg-purple-50 text-purple-700">
+              <Pill className="h-4 w-4 mr-1" />
+              {totalPrescriptions} total
+            </Badge>
+            <div className="text-sm text-gray-500">
+              Hospital: {state.user?.hospital_id || "N/A"}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 p-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Stethoscope className="h-5 w-5" />
-              Pacientes en Atención
-            </CardTitle>
-            <CardDescription>
-              Lista de pacientes activos para seguimiento de enfermería
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="flex items-center gap-2 text-gray-600">
-                  <Clock className="h-5 w-5 animate-spin" />
-                  Cargando pacientes...
+      {/* Content with Scroll */}
+      <ScrollArea className="flex-1">
+        <div className="p-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Stethoscope className="h-5 w-5" />
+                    Pacientes en Atención
+                  </CardTitle>
+                  <CardDescription>
+                    Lista de pacientes activos para seguimiento de enfermería ({patients.length} pacientes)
+                  </CardDescription>
+                </div>
+                <div className="text-sm text-gray-500">
+                  Última actualización: {new Date(lastUpdate).toLocaleTimeString('es-AR')}
                 </div>
               </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Paciente</TableHead>
-                    <TableHead>DNI</TableHead>
-                    <TableHead>Habitación</TableHead>
-                    <TableHead>Últimos Signos Vitales</TableHead>
-                    <TableHead>Último Registro</TableHead>
-                    <TableHead>Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {patients.map((patient) => (
-                    <TableRow key={patient.episodio_id}>
-                      <TableCell className="font-medium">
-                        {patient.paciente_nombre}
-                      </TableCell>
-                      <TableCell>{patient.paciente_dni}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {patient.habitacion || "Sin asignar"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {getLastVitalSigns(patient)}
-                      </TableCell>
-                      <TableCell>
-                        {getTimeSinceLastRecord(patient.tiempo_desde_ultimo_registro)}
-                      </TableCell>
-                      <TableCell>
-                        <Dialog open={isDialogOpen && selectedPatient?.episodio_id === patient.episodio_id} onOpenChange={setIsDialogOpen}>
-                          <DialogTrigger asChild>
-                            <Button 
-                              onClick={() => handleRegisterCare(patient)}
-                              size="sm"
-                              className="flex items-center gap-2"
-                            >
-                              <Plus className="h-4 w-4" />
-                              Registrar Cuidados
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                            <DialogHeader>
-                              <DialogTitle className="flex items-center gap-2">
-                                <HeartPulse className="h-5 w-5" />
-                                Registrar Cuidados - {selectedPatient?.paciente_nombre}
-                              </DialogTitle>
-                            </DialogHeader>
-                            
-                            <Tabs value={activeTab} onValueChange={setActiveTab}>
-                              <TabsList className="grid w-full grid-cols-2">
-                                <TabsTrigger value="vital-signs" className="flex items-center gap-2">
-                                  <Activity className="h-4 w-4" />
-                                  Signos Vitales
-                                </TabsTrigger>
-                                <TabsTrigger value="nursing-note" className="flex items-center gap-2">
-                                  <FileText className="h-4 w-4" />
-                                  Nota de Enfermería
-                                </TabsTrigger>
-                              </TabsList>
-                              
-                              <TabsContent value="vital-signs" className="mt-4">
-                                <VitalSignsFormComponent />
-                              </TabsContent>
-                              
-                              <TabsContent value="nursing-note" className="mt-4">
-                                <NursingNoteFormComponent />
-                              </TabsContent>
-                            </Tabs>
-                          </DialogContent>
-                        </Dialog>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-            
-            {!isLoading && patients.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                <Stethoscope className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No hay pacientes en atención actualmente</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Clock className="h-5 w-5 animate-spin" />
+                    Cargando pacientes...
+                  </div>
+                </div>
+              ) : (
+                <ScrollArea className="h-[600px] w-full">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Paciente</TableHead>
+                        <TableHead>DNI</TableHead>
+                        <TableHead>Triaje</TableHead>
+                        <TableHead>Ubicación</TableHead>
+                        <TableHead>Prescripciones Activas</TableHead>
+                        <TableHead>Últimos Signos Vitales</TableHead>
+                        <TableHead>Último Registro</TableHead>
+                        <TableHead>Acciones</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {patients.map((patient) => (
+                        <TableRow key={patient.episodio_id}>
+                          <TableCell className="font-medium">
+                            <div>
+                              <div className="font-semibold">{patient.paciente_nombre}</div>
+                              <div className="text-sm text-gray-500">{patient.motivo_consulta}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>{patient.paciente_dni}</TableCell>
+                          <TableCell>
+                            {getTriageColorBadge(patient.triageColor)}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {patient.habitacion || "Sin asignar"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {getPrescriptionsInfo(patient)}
+                          </TableCell>
+                          <TableCell>
+                            {getLastVitalSigns(patient)}
+                          </TableCell>
+                          <TableCell>
+                            {getTimeSinceLastRecord(patient.tiempo_desde_ultimo_registro)}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button
+                                size="sm"
+                                onClick={() => handleRegisterCare(patient)}
+                                className="bg-blue-600 hover:bg-blue-700"
+                              >
+                                <Plus className="h-4 w-4 mr-1" />
+                                Registrar
+                              </Button>
+                              {patient.prescriptions && patient.prescriptions.length > 0 && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    // TODO: Implementar vista de prescripciones
+                                    alert(`Prescripciones de ${patient.paciente_nombre}:\n\n${patient.prescriptions?.map((p: any) =>
+                                      `• ${p.medication} - ${p.dose} - ${p.frequency}`
+                                    ).join('\n') || 'Sin prescripciones'
+                                      }`)
+                                  }}
+                                >
+                                  <Eye className="h-4 w-4 mr-1" />
+                                  Ver Meds
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              )}
+
+              {!isLoading && patients.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <Stethoscope className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p className="font-medium">No hay pacientes en atención actualmente</p>
+                  <p className="text-sm">Los pacientes aparecerán aquí cuando estén en la lista de espera</p>
+                  <Button
+                    variant="outline"
+                    className="mt-4"
+                    onClick={refrescarDatos}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Verificar nuevos pacientes
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </ScrollArea>
+
+      {/* Modal de Registro */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <HeartPulse className="h-5 w-5 text-blue-600" />
+              Registro de Enfermería - {selectedPatient?.paciente_nombre}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="vital-signs" className="flex items-center gap-2">
+                  <Activity className="h-4 w-4" />
+                  Signos Vitales
+                </TabsTrigger>
+                <TabsTrigger value="nursing-note" className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Nota de Enfermería
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="vital-signs" className="mt-4">
+                <VitalSignsFormComponent />
+              </TabsContent>
+
+              <TabsContent value="nursing-note" className="mt-4">
+                <NursingNoteFormComponent />
+              </TabsContent>
+            </Tabs>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 } 
