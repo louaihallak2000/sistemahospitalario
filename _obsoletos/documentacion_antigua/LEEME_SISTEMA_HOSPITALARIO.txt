@@ -1,0 +1,223 @@
+================================================================================
+🏥 SISTEMA HOSPITALARIO - GUÍA DE USO RÁPIDO
+================================================================================
+
+📋 ¿QUÉ ES ESTE SISTEMA?
+────────────────────────
+Un sistema completo de gestión hospitalaria para emergencias con:
+• Gestión de pacientes y episodios
+• Sistema de triaje por colores
+• Panel de enfermería avanzado
+• Historias clínicas automáticas
+• Notificaciones en tiempo real (WebSocket)
+• Interfaz web moderna y responsive
+
+================================================================================
+🚀 INICIO RÁPIDO (3 PASOS)
+================================================================================
+
+PASO 1: REQUISITOS
+───────────────────
+✅ Windows 10/11
+✅ Python 3.8+ instalado (https://python.org)
+✅ Node.js 16+ instalado (https://nodejs.org)
+✅ Conexión a internet (para descargar dependencias)
+
+PASO 2: INICIAR SISTEMA
+────────────────────────
+1. Haz doble clic en: "INICIAR_SISTEMA_HOSPITALARIO.bat"
+2. Espera a que aparezcan 2 ventanas (Backend + Frontend)
+3. El navegador se abrirá automáticamente en http://localhost:3000
+
+PASO 3: ¡USAR EL SISTEMA!
+──────────────────────────
+• El sistema ya tiene datos de ejemplo cargados
+• 15 pacientes y 20 episodios listos para usar
+• Usuarios de prueba creados automáticamente
+
+================================================================================
+🌐 ACCESO AL SISTEMA
+================================================================================
+
+FRONTEND (Interfaz Principal)
+─────────────────────────────
+🔗 URL: http://localhost:3000
+📱 Interfaz web moderna y responsive
+🔄 Actualizaciones en tiempo real
+
+BACKEND (API y Documentación)
+─────────────────────────────
+🔗 URL: http://localhost:8000/docs
+🛠️  API REST completa
+📊 Documentación interactiva (Swagger)
+
+WEBSOCKET (Tiempo Real)
+───────────────────────
+🔗 URL: ws://localhost:8000/ws
+⚡ Notificaciones instantáneas
+🔄 Sincronización entre usuarios
+
+================================================================================
+👥 USUARIOS DE PRUEBA
+================================================================================
+
+MÉDICO
+──────
+👨‍⚕️ Usuario: dr.martinez
+🏥 Rol: Médico especialista
+✅ Acceso completo al sistema
+
+ENFERMERAS
+──────────
+👩‍⚕️ Usuario: enf.garcia
+👩‍⚕️ Usuario: enf.lopez
+🏥 Rol: Enfermería
+✅ Panel especializado para enfermería
+
+💡 NOTA: Las contraseñas se configurarán en el sistema de login
+
+================================================================================
+📊 DATOS INCLUIDOS
+================================================================================
+
+PACIENTES
+─────────
+• 15 pacientes con datos realistas
+• Información completa (DNI, nombre, edad, contacto)
+• Diferentes obras sociales y características
+
+EPISODIOS
+─────────
+• 20 episodios en total
+• 5 episodios pendientes de triaje
+• 11 episodios en lista de espera
+• 4 episodios en proceso de atención
+• Diferentes motivos de consulta
+
+HISTORIA CLÍNICA
+────────────────
+• Registros automáticos de todas las acciones
+• Signos vitales de ejemplo
+• Registros de triaje
+• Notas de enfermería
+
+================================================================================
+🛠️ CONTROLES DEL SISTEMA  
+================================================================================
+
+INICIAR SISTEMA
+───────────────
+▶️  Archivo: "INICIAR_SISTEMA_HOSPITALARIO.bat"
+🎯 Inicia todo automáticamente
+⏱️  Tiempo de inicio: ~30 segundos
+
+DETENER SISTEMA
+───────────────
+⏹️  Archivo: "DETENER_SISTEMA_HOSPITALARIO.bat"  
+🎯 Detiene todo completamente
+💾 Los datos se guardan automáticamente
+
+VERIFICAR ESTADO
+────────────────
+🔍 El iniciador verifica automáticamente que todo funcione
+📊 Muestra el estado de Backend y Frontend
+⚠️  Informa si hay problemas
+
+================================================================================
+🔧 FUNCIONALIDADES PRINCIPALES
+================================================================================
+
+DASHBOARD PRINCIPAL
+───────────────────
+📊 Vista general del hospital
+📈 Estadísticas en tiempo real
+🚨 Alertas importantes
+👥 Lista de pacientes activos
+
+SISTEMA DE TRIAJE
+─────────────────
+🔴 ROJO: Emergencia crítica
+🟠 NARANJA: Urgencia alta  
+🟡 AMARILLO: Urgencia media
+🟢 VERDE: Urgencia baja
+🔵 AZUL: No urgente
+
+PANEL DE ENFERMERÍA
+──────────────────
+💊 Gestión de prescripciones
+🩺 Registro de signos vitales
+📝 Notas de enfermería
+🔔 Notificaciones en tiempo real
+
+HISTORIAS CLÍNICAS
+──────────────────
+📋 Registro automático de todas las acciones
+🔍 Búsqueda por DNI de paciente
+📊 Historial completo de atención
+⏰ Cronología detallada
+
+================================================================================
+⚠️ PROBLEMAS COMUNES Y SOLUCIONES
+================================================================================
+
+PROBLEMA: "No se encuentra Python"
+──────────────────────────────────
+SOLUCIÓN: 
+1. Instala Python desde https://python.org
+2. Asegúrate de marcar "Add to PATH"
+3. Reinicia la computadora
+
+PROBLEMA: "No se encuentra Node.js"
+───────────────────────────────────
+SOLUCIÓN:
+1. Instala Node.js desde https://nodejs.org
+2. Usa la versión LTS (recomendada)
+3. Reinicia la computadora
+
+PROBLEMA: Error "Puerto ya en uso"
+──────────────────────────────────
+SOLUCIÓN:
+1. Ejecuta "DETENER_SISTEMA_HOSPITALARIO.bat"
+2. Espera 10 segundos
+3. Vuelve a iniciar el sistema
+
+PROBLEMA: Frontend no carga
+────────────────────────────
+SOLUCIÓN:
+1. Verifica que el Backend esté funcionando
+2. Ve a http://localhost:8000/docs
+3. Si no funciona, reinicia el sistema completo
+
+================================================================================
+🆘 SOPORTE Y AYUDA
+================================================================================
+
+LOGS DEL SISTEMA
+────────────────
+📁 Los logs se guardan automáticamente
+🔍 Revisa las ventanas de Backend/Frontend para errores
+📝 Información detallada para diagnóstico
+
+VERIFICACIÓN AUTOMÁTICA
+────────────────────────
+✅ El sistema verifica automáticamente:
+   • Conectividad del Backend
+   • Estado de la base de datos
+   • Funcionamiento del Frontend
+
+CONTACTO
+────────
+🏥 Sistema desarrollado para gestión hospitalaria
+📧 Consultas técnicas: Revisar logs del sistema
+🔧 Soporte: Usar archivos de diagnóstico incluidos
+
+================================================================================
+✨ ¡DISFRUTA USANDO EL SISTEMA HOSPITALARIO!
+================================================================================
+
+El sistema está diseñado para ser intuitivo y fácil de usar.
+Todas las funcionalidades están integradas y funcionan en tiempo real.
+
+¡Esperamos que este sistema mejore la eficiencia de tu trabajo hospitalario!
+
+================================================================================ 

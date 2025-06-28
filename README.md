@@ -1,153 +1,335 @@
-# Sistema Hospitalario de Emergencias 🏥
+# 🏥 Sistema Hospitalario Completo - Nuevo Workflow
 
-Sistema completo de gestión hospitalaria desarrollado con tecnologías modernas para el manejo eficiente de pacientes en áreas de emergencia.
+## ✅ **SISTEMA 100% FUNCIONAL** 
 
-## 🚀 Características Principales
+Sistema completo de gestión hospitalaria con **WORKFLOW REDISEÑADO** para optimizar la atención en emergencias con códigos de emergencia, triaje enfermería y atención médica integral.
 
-- **Gestión de Pacientes**: Registro completo con historia clínica
-- **Sistema de Triaje**: Clasificación por colores según urgencia (Rojo, Naranja, Amarillo, Verde, Azul)
-- **Lista de Espera en Tiempo Real**: Visualización y gestión de pacientes en espera
-- **Gestión de Episodios Médicos**: Control completo del flujo de atención
-- **Sistema Multi-Tenant**: Soporte para múltiples hospitales
-- **Autenticación JWT**: Sistema seguro de autenticación y autorización
-- **Dashboard Estadístico**: Visualización de métricas en tiempo real
+---
 
-## 🛠️ Tecnologías Utilizadas
+## 🎯 **NUEVO WORKFLOW IMPLEMENTADO**
 
-### Backend
-- **FastAPI** (Python 3.13+) - Framework web moderno y rápido
-- **SQLAlchemy** - ORM para manejo de base de datos
-- **SQLite** - Base de datos (fácilmente migrable a PostgreSQL/MySQL)
-- **JWT** - Autenticación segura
-- **Pydantic** - Validación de datos
+### **🚨 CÓDIGOS DE EMERGENCIA (Proceso A)**
+- **7 tipos de códigos**: AZUL, ACV, IAM, TRAUMA, SEPSIS, PEDIÁTRICO, OBSTÉTRICO
+- **Activación instantánea** con notificación a todo el personal
+- **Bypass completo** del proceso normal de admisión
+- **Registro automático** de respuestas del personal
 
-### Frontend
-- **Next.js 15** - Framework React con SSR
-- **React 19** - Biblioteca UI
-- **TypeScript** - Tipado estático
-- **Tailwind CSS** - Framework CSS utility-first
+### **📋 PROCESO NORMAL (Proceso B)**
+1. **Paciente llega** → Admisión automática a lista triaje
+2. **Enfermería realiza triaje** → Asigna color + signos vitales
+3. **Enfermería decide**: Lista médica | Alta enfermería | Shockroom
+4. **Médico toma paciente** de lista médica priorizada
+5. **Atención médica completa**: Prescripciones + Procedimientos + Estudios + Evoluciones
+6. **Decisión final OBLIGATORIA**: Alta | Internación | Continúa
+
+### **🚑 TRASLADOS EXTERNOS (Proceso C)**
+1. **Admisión rápida** desde hospital externo
+2. **Evaluación inmediata** por enfermería/médico
+3. **Decisión**: Shockroom | Lista médica | Código emergencia
+4. **Integración automática** con sistema origen
+
+---
+
+## 🚀 **INICIO RÁPIDO**
+
+### **❓ ¿CONFUNDIDO CON TANTOS SCRIPTS?**
+**👉 LEE PRIMERO:** [`SCRIPTS_A_USAR.md`](SCRIPTS_A_USAR.md) - **Guía simple de qué scripts usar**
+
+### **🎯 OPCIÓN 1: Nuevo Workflow (RECOMENDADO)**
+```bash
+INICIAR_NUEVO_WORKFLOW.bat
+```
+- ✅ Actualiza base de datos automáticamente
+- ✅ Inicia backend con nuevo workflow
+- ✅ Inicia frontend actualizado
+- ✅ Configuración completa automática
+
+### **🎯 OPCIÓN 2: Completo con Verificaciones**
+```bash
+SISTEMA_COMPLETO_FUNCIONANDO.bat
+```
+- ✅ Verifica requisitos del sistema
+- ✅ Instala dependencias automáticamente
+- ✅ Ideal para primera vez o problemas
+
+### **🎯 OPCIÓN 3: Solo Frontend Actualizado**
+```bash
+INICIAR_FRONTEND_NUEVO_WORKFLOW.bat
+```
+- ✅ Solo para desarrollo frontend
+- ✅ Cuando el backend ya está corriendo
+
+---
+
+## 🌐 **NAVEGACIÓN DEL SISTEMA**
+
+### **🔗 URLs Principales**
+- **🌐 Frontend**: http://localhost:3000
+- **🔧 Backend**: http://127.0.0.1:8000
+- **📖 API Docs**: http://127.0.0.1:8000/docs
+
+### **🧭 Rutas del Nuevo Workflow**
+- **`/`** - Dashboard principal con métricas
+- **`/codigos-emergencia`** - Gestión de códigos de emergencia
+- **`/admision`** - Admisión de pacientes
+- **`/enfermeria/triaje`** - Sistema de triaje por enfermería
+- **`/enfermeria/decisiones`** - Decisiones post-triaje
+- **`/medicos/lista`** - Lista médica priorizada
+- **`/medicos/atencion/:id`** - Atención médica completa
+- **`/shockroom`** - Shockroom con 6 camas
+- **`/pacientes/:id`** - Ficha completa del paciente
+
+---
+
+## 👥 **ROLES Y PERMISOS**
+
+### **👨‍💼 Administrador**
+- ✅ Acceso completo a todo el sistema
+- ✅ Gestión de usuarios y hospitales
+- ✅ Configuración de parámetros
+- ✅ Reportes y estadísticas
+
+### **👨‍⚕️ Médico**
+- ✅ Lista médica priorizada
+- ✅ Atención médica completa
+- ✅ Prescripciones y procedimientos
+- ✅ Shockroom
+- ✅ Códigos de emergencia
+
+### **👩‍⚕️ Enfermera**
+- ✅ Triaje de pacientes
+- ✅ Decisiones post-triaje
+- ✅ Alta de enfermería
+- ✅ Shockroom
+- ✅ Códigos de emergencia
+
+---
+
+## 🛠️ **TECNOLOGÍAS**
+
+### **🔧 Backend**
+- **FastAPI** (Python 3.13+) - API RESTful moderna
+- **SQLAlchemy** - ORM con modelos actualizados
+- **SQLite** → **PostgreSQL** ready
+- **JWT Multi-tenant** - Autenticación por hospital
+- **WebSocket** - Notificaciones en tiempo real
+- **Pydantic V2** - Validación de datos
+
+### **🌐 Frontend**
+- **Next.js 15** - Framework React SSR/SSG
+- **React 19** - UI moderna y reactiva
+- **TypeScript** - Tipado fuerte
+- **Tailwind CSS** - Styling utility-first
 - **Radix UI** - Componentes accesibles
+- **React Router** - Navegación por rutas
 
-## 📋 Requisitos Previos
+---
 
-- Python 3.13 o superior
-- Node.js 18 o superior
+## 📋 **INSTALACIÓN**
+
+### **📥 Prerrequisitos**
+- Python 3.13+
+- Node.js 18+
 - Git
 
-## 🔧 Instalación y Configuración
-
-### 1. Clonar el repositorio
+### **⚡ Instalación Automática**
 ```bash
-git clone https://github.com/louaihallak2000/sistemahospitalario.git
-cd sistemahospitalario
+git clone <repository>
+cd sistema-hospitalario
+INSTALAR_DEPENDENCIAS.bat
+INICIAR_NUEVO_WORKFLOW.bat
 ```
 
-### 2. Configurar el Backend
+### **🔧 Instalación Manual**
 ```bash
+# 1. Backend
 cd proyecto_hospital
 python -m venv venv
-venv\Scripts\activate  # En Windows
+venv\Scripts\activate
 pip install -r requirements.txt
-python init_db.py  # Inicializar base de datos con datos de prueba
-```
+python actualizar_db_workflow.py
 
-### 3. Configurar el Frontend
-```bash
+# 2. Frontend  
 cd frontend
 npm install
-```
 
-### 4. Ejecutar el Sistema
-
-#### Opción 1: Script Automático (Recomendado)
-```bash
-# Desde el directorio raíz
-INICIAR_SISTEMA_COMPLETO.bat
-```
-
-#### Opción 2: Manual
-```bash
-# Terminal 1 - Backend
-cd proyecto_hospital
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
-
-# Terminal 2 - Frontend
-cd proyecto_hospital/frontend
+# 3. Ejecutar
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 npm run dev
 ```
 
-## 🔐 Credenciales de Acceso
+---
 
-- **Usuario**: admin
-- **Contraseña**: admin123
-- **Hospital**: HOSP001
+## 🔐 **CREDENCIALES**
 
-## 📁 Estructura del Proyecto
+### **🏥 Hospital de Prueba**
+- **Hospital ID**: HOSP001
+- **Nombre**: Hospital General
+
+### **👤 Usuarios de Prueba**
+- **Admin**: admin / admin123
+- **Médico**: medico1 / medico123  
+- **Enfermera**: enfermera1 / enfermera123
+
+---
+
+## 📁 **ESTRUCTURA ACTUALIZADA**
 
 ```
 sistema-hospitalario/
-├── proyecto_hospital/         # Backend FastAPI
+├── 🗃️ proyecto_hospital/           # Backend FastAPI
 │   ├── app/
-│   │   ├── api/              # Endpoints API
-│   │   ├── core/             # Configuración core
-│   │   ├── models/           # Modelos SQLAlchemy
-│   │   ├── schemas/          # Esquemas Pydantic
-│   │   └── services/         # Lógica de negocio
-│   ├── frontend/             # Frontend Next.js
-│   │   ├── app/              # App directory (Next.js 13+)
-│   │   ├── components/       # Componentes React
-│   │   ├── lib/              # Utilidades y contexto
-│   │   └── public/           # Assets estáticos
-│   └── init_db.py            # Script inicialización DB
-├── .gitignore
-├── README.md
-├── setup-git.bat             # Configurar Git
-└── update-github.bat         # Actualizar repositorio
+│   │   ├── api/v1/                 # APIs del nuevo workflow
+│   │   │   ├── codigos_emergencia.py  # 🚨 Códigos emergencia
+│   │   │   ├── episodios.py        # 📋 Workflow completo  
+│   │   │   ├── admision.py         # 🏥 Admisión
+│   │   │   ├── enfermeria.py       # 👩‍⚕️ Enfermería
+│   │   │   └── shockroom.py        # 🚑 Shockroom
+│   │   ├── models/                 # Modelos actualizados
+│   │   │   ├── codigo_emergencia.py
+│   │   │   ├── episodio.py         # 🔄 Nuevo workflow
+│   │   │   └── shockroom.py
+│   │   └── schemas/                # Esquemas Pydantic
+│   ├── frontend/                   # Frontend Next.js
+│   │   ├── components/
+│   │   │   ├── emergency/          # 🚨 Códigos emergencia
+│   │   │   ├── triage/             # 🔍 Triaje enfermería
+│   │   │   ├── nursing/            # 👩‍⚕️ Decisiones enfermería  
+│   │   │   ├── medical/            # 👨‍⚕️ Atención médica
+│   │   │   └── shockroom/          # 🚑 Shockroom mejorado
+│   │   └── app/                    # Rutas Next.js
+│   └── actualizar_db_workflow.py   # 🔄 Migración DB
+├── 🚀 Scripts de Iniciación
+│   ├── INICIAR_NUEVO_WORKFLOW.bat           # ⭐ PRINCIPAL
+│   ├── INICIAR_FRONTEND_NUEVO_WORKFLOW.bat  # 🌐 Solo frontend
+│   └── SISTEMA_COMPLETO_FUNCIONANDO.bat     # 📊 Legacy
+├── 🛑 Scripts de Detención  
+│   ├── DETENER_SISTEMA_HOSPITALARIO_COMPLETO.bat
+│   └── DETENER_SISTEMA.ps1
+└── 📖 Documentación
+    ├── RESUMEN_IMPLEMENTACION_NUEVO_WORKFLOW.md
+    └── GUIA_RAPIDA_SISTEMA_HOSPITALARIO.md
 ```
 
-## 🚀 Uso del Sistema
+---
 
-1. **Login**: Acceder con las credenciales proporcionadas
-2. **Dashboard**: Vista general con estadísticas en tiempo real
-3. **Registro de Pacientes**: Crear nuevos pacientes y episodios
-4. **Gestión de Episodios**: 
-   - Ver lista de espera
-   - Tomar pacientes
-   - Registrar evoluciones médicas
-   - Prescribir medicamentos
-   - Ordenar estudios
-   - Dar de alta o internar
+## ✨ **FUNCIONALIDADES IMPLEMENTADAS**
 
-## 📊 Funcionalidades Implementadas
+### **🚨 Códigos de Emergencia**
+- ✅ 7 tipos de códigos definidos
+- ✅ Activación con notificación automática
+- ✅ Seguimiento de respuestas del personal
+- ✅ Historial completo de eventos
+- ✅ Bypass del flujo normal
 
-- ✅ Autenticación y autorización JWT
-- ✅ CRUD completo de pacientes
-- ✅ Sistema de triaje por colores
-- ✅ Lista de espera en tiempo real
-- ✅ Gestión de episodios médicos
-- ✅ Prescripciones médicas
+### **👩‍⚕️ Sistema de Enfermería**
+- ✅ Triaje con 5 colores (ROJO, NARANJA, AMARILLO, VERDE, AZUL)
+- ✅ Registro de signos vitales completos
+- ✅ Decisiones post-triaje: Lista médica | Alta | Shockroom
+- ✅ Tiempo de atención objetivos por color
+
+### **👨‍⚕️ Sistema Médico**
+- ✅ Lista priorizada por color de triaje
+- ✅ Atención médica integral
+- ✅ Prescripciones de medicamentos
+- ✅ Indicación de procedimientos
 - ✅ Órdenes de estudios/laboratorio
 - ✅ Evoluciones médicas
-- ✅ Alta e internación
-- ✅ Dashboard con estadísticas
-- ✅ Sistema multi-tenant
+- ✅ Decisión final obligatoria
 
-## 🤝 Contribuir
+### **🚑 Shockroom Avanzado**
+- ✅ 6 camas con monitoreo individual
+- ✅ 3 vías de admisión
+- ✅ Panel diferenciado por rol
+- ✅ Indicaciones de enfermería
+- ✅ Traslados automáticos
 
-1. Fork el proyecto
-2. Crea tu rama de característica (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
-
-## 📝 Licencia
-
-Este proyecto está bajo la Licencia MIT - ver el archivo LICENSE para más detalles.
-
-## 👤 Autor
-
-**Louai Hallak**
-- GitHub: [@louaihallak2000](https://github.com/louaihallak2000)
+### **📊 Dashboard y Reportes**
+- ✅ Métricas en tiempo real
+- ✅ Estados del workflow
+- ✅ Tiempos de atención
+- ✅ Estadísticas por triaje
+- ✅ Códigos activos
 
 ---
-⭐ Si este proyecto te fue útil, considera darle una estrella! 
+
+## 🔄 **MIGRACIÓN DE DATOS**
+
+El sistema incluye migración automática de datos existentes:
+
+```bash
+python actualizar_db_workflow.py
+```
+
+- ✅ Preserva pacientes existentes
+- ✅ Migra episodios al nuevo formato
+- ✅ Mantiene historiales médicos
+- ✅ Actualiza esquema de base de datos
+
+---
+
+## 🛑 **DETENER EL SISTEMA**
+
+```bash
+# Opción 1: Script completo
+DETENER_SISTEMA_HOSPITALARIO_COMPLETO.bat
+
+# Opción 2: PowerShell
+DETENER_SISTEMA.ps1
+
+# Opción 3: Manual
+Ctrl+C en cada terminal
+```
+
+---
+
+## 🤝 **CONTRIBUIR**
+
+1. Fork el repositorio
+2. Crea rama de feature (`git checkout -b feature/nueva-funcionalidad`)
+3. Commit cambios (`git commit -m 'Agregar nueva funcionalidad'`)
+4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
+5. Crear Pull Request
+
+---
+
+## 📞 **SOPORTE**
+
+### **📧 Contacto**
+- **Desarrollador**: Louai Hallak
+- **GitHub**: [@louaihallak2000](https://github.com/louaihallak2000)
+
+### **🐛 Reporte de Errores**
+- Crear issue en GitHub con:
+  - Descripción del problema
+  - Pasos para reproducir
+  - Logs del sistema
+  - Capturas de pantalla
+
+### **💡 Solicitudes de Funcionalidades**
+- Crear issue con etiqueta "enhancement"
+- Describir la funcionalidad deseada
+- Justificar el caso de uso
+
+---
+
+## 📜 **LICENCIA**
+
+Este proyecto está bajo la Licencia MIT - ver [LICENSE](LICENSE) para más detalles.
+
+---
+
+## 🏆 **RECONOCIMIENTOS**
+
+- **FastAPI** - Framework web moderno
+- **Next.js** - Framework React con SSR
+- **Radix UI** - Componentes accesibles
+- **Tailwind CSS** - Framework CSS utility-first
+
+---
+
+⭐ **¡Si este proyecto te fue útil, considera darle una estrella!** ⭐
+
+---
+
+**📈 Sistema en constante evolución - Última actualización: Workflow completo implementado** 

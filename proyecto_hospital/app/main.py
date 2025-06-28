@@ -6,12 +6,13 @@ import time
 import logging
 from datetime import datetime
 
-from app.api.v1 import auth, pacientes, episodios, enfermeria, websocket
+from app.api.v1 import auth, pacientes, episodios, enfermeria, websocket, shockroom, codigos_emergencia
 from app.api.v1 import admision as admision_api
 from app.core.database import engine, Base
 
 # Importar todos los modelos para que SQLAlchemy los reconozca
 from app.models import hospital, usuario, paciente, episodio, admision, enfermeria as enfermeria_model, historia_clinica
+from app.models import shockroom as shockroom_models, codigo_emergencia
 
 # Configurar logging detallado
 logging.basicConfig(
@@ -174,6 +175,18 @@ app.include_router(
     tags=["WebSocket y Notificaciones"]
 )
 
+app.include_router(
+    shockroom.router,
+    prefix="/api/v1/shockroom",
+    tags=["Shockroom"]
+)
+
+app.include_router(
+    codigos_emergencia.router,
+    prefix="/api/v1/codigos-emergencia",
+    tags=["Códigos de Emergencia"]
+)
+
 # Endpoint raíz
 @app.get("/")
 async def root():
@@ -184,7 +197,13 @@ async def root():
         "version": "1.0.0",
         "documentación": "/docs",
         "estado": "operativo",
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
+        "nuevas_funcionalidades": [
+            "Códigos de emergencia",
+            "Workflow de triaje por enfermería",
+            "Decisiones post-triaje",
+            "Shockroom mejorado"
+        ]
     }
 
 # Endpoint de salud mejorado
@@ -206,7 +225,8 @@ async def health_check():
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
         "database": db_status,
-        "version": "1.0.0"
+        "version": "1.0.0",
+        "workflow": "nuevo_workflow_implementado"
     }
 
 # Manejar errores globalmente

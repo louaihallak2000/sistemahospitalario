@@ -191,6 +191,11 @@ export function Dashboard() {
     dispatch({ type: "SET_SCREEN", payload: "nursing" })
   }
 
+  const navigateToShockroom = () => {
+    console.log("🚨 Navegando a Shockroom...")
+    dispatch({ type: "SET_SCREEN", payload: "shockroom" })
+  }
+
   const getAge = (birthDate?: string) => {
     if (!birthDate) return "N/A"
     const today = new Date()

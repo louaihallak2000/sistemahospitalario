@@ -1,206 +1,270 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { useHospital } from "@/lib/context"
-import { cn } from "@/lib/utils"
-import {
-    AlertTriangle,
-    ChevronLeft,
-    ChevronRight,
-    Clock,
-    FileText,
-    HeartPulse,
-    Hospital,
-    Monitor,
-    Upload,
-    UserCheck
-} from "lucide-react"
-import React, { useState } from "react"
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { useHospital } from '@/lib/context'
+import { Activity, AlertTriangle, Brain, Building2, FileText, Heart, Home, Siren, Stethoscope, UserPlus, Users, Zap } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 interface SidebarProps {
-    className?: string
+    userRole?: string;
 }
 
-export function Sidebar({ className }: SidebarProps) {
-    const { state, dispatch } = useHospital()
-    const [isCollapsed, setIsCollapsed] = useState(false)
-    const currentScreen = state.currentScreen
+interface MenuItem {
+    id: string;
+    label: string;
+    icon: React.ComponentType<any>;
+    path: string;
+    badge: number | null;
+    badgeVariant?: "default" | "secondary" | "destructive" | "outline";
+    roles: string[];
+}
 
-    const toggleSidebar = () => {
-        setIsCollapsed(!isCollapsed)
-    }
+export function Sidebar({ userRole = "admin" }: SidebarProps) {
+    const router = useRouter()
+    const { state } = useHospital()
+    const [activeCodes, setActiveCodes] = useState(0)
+    const [currentView, setCurrentView] = useState("dashboard")
 
-    const navigateTo = (screen: string) => {
-        console.log(`🔄 Navegando a: ${screen}`)
-        dispatch({ type: "SET_SCREEN", payload: screen as any })
-    }
+    // Simular códigos activos y estadísticas (esto vendrá de la API real)
+    useEffect(() => {
+        // TODO: Fetch active emergency codes and triage stats
+        setActiveCodes(0)
+    }, [])
 
-    // Función helper para determinar si una sección está activa
-    const isActiveSection = (section: string) => {
-        switch (section) {
-            case "dashboard":
-                return currentScreen === "dashboard"
-            case "lista-espera":
-                return currentScreen === "dashboard" // Por ahora va al dashboard
-            case "triaje":
-                return currentScreen === "dashboard" // Por ahora va al dashboard  
-            case "enfermeria":
-                return currentScreen === "nursing"
-            case "historias-clinicas":
-                return currentScreen === "historias-clinicas"
-            case "importar":
-                return false // Por implementar
-            default:
-                return false
+    const handleNavigation = (screen: string, path?: string) => {
+        setCurrentView(screen)
+        if (path) {
+            router.push(path)
         }
     }
 
-    const MenuItem = ({
-        icon: Icon,
-        label,
-        onClick,
-        isActive = false,
-        isSubitem = false
-    }: {
-        icon: React.ComponentType<any>
-        label: string
-        onClick: () => void
-        isActive?: boolean
-        isSubitem?: boolean
-    }) => (
-        <button
-            onClick={onClick}
-            className={cn(
-                "w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                isSubitem ? "pl-8 text-gray-600" : "text-gray-700",
-                isActive
-                    ? "bg-blue-100 text-blue-700 border-r-2 border-blue-500"
-                    : "hover:bg-gray-100 hover:text-gray-900",
-                isCollapsed && "justify-center px-2"
-            )}
-        >
-            <Icon className={cn("h-4 w-4", isCollapsed ? "" : "mr-3")} />
-            {!isCollapsed && <span>{label}</span>}
-        </button>
-    )
+    // Simular estadísticas de triaje temporalmente
+    const triageStats = {
+        waiting: 5,
+        red: 2,
+        orange: 3,
+        yellow: 8,
+        green: 12,
+        blue: 1
+    }
 
-    const SectionHeader = ({ label }: { label: string }) => (
-        !isCollapsed && (
-            <div className="px-3 py-2">
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    {label}
-                </h3>
-            </div>
-        )
-    )
+    // Menú para diferentes roles
+    const getMenuItems = (): MenuItem[] => {
+        const baseItems: MenuItem[] = [
+            {
+                id: "dashboard",
+                label: "Dashboard",
+                icon: Home,
+                path: "/dashboard",
+                badge: null,
+                roles: ["admin", "medico", "enfermera"]
+            }
+        ]
+
+        const emergencyItems: MenuItem[] = [
+            {
+                id: "emergency-codes",
+                label: "Códigos de Emergencia",
+                icon: Siren,
+                path: "/codigos-emergencia",
+                badge: activeCodes > 0 ? activeCodes : null,
+                badgeVariant: "destructive",
+                roles: ["admin", "medico", "enfermera"]
+            }
+        ]
+
+        const admissionItems: MenuItem[] = [
+            {
+                id: "admission",
+                label: "Admisión",
+                icon: UserPlus,
+                path: "/admision",
+                badge: null,
+                roles: ["admin", "enfermera"]
+            }
+        ]
+
+        const nursingItems: MenuItem[] = [
+            {
+                id: "nursing-triage",
+                label: "Triaje",
+                icon: Activity,
+                path: "/enfermeria/triaje",
+                badge: triageStats.waiting,
+                badgeVariant: "default",
+                roles: ["admin", "enfermera"]
+            },
+            {
+                id: "nursing-decisions",
+                label: "Decisiones Post-Triaje",
+                icon: FileText,
+                path: "/enfermeria/decisiones",
+                badge: null,
+                roles: ["admin", "enfermera"]
+            }
+        ]
+
+        const medicalItems: MenuItem[] = [
+            {
+                id: "medical-list",
+                label: "Lista Médica",
+                icon: Stethoscope,
+                path: "/medicos/lista",
+                badge: triageStats.red + triageStats.orange + triageStats.yellow,
+                badgeVariant: "secondary",
+                roles: ["admin", "medico"]
+            }
+        ]
+
+        const shockroomItems: MenuItem[] = [
+            {
+                id: "shockroom",
+                label: "Shockroom",
+                icon: Heart,
+                path: "/shockroom",
+                badge: null,
+                roles: ["admin", "medico", "enfermera"]
+            }
+        ]
+
+        return [
+            ...baseItems,
+            ...emergencyItems,
+            ...admissionItems,
+            ...nursingItems,
+            ...medicalItems,
+            ...shockroomItems
+        ].filter(item => item.roles.includes(userRole))
+    }
+
+    const menuItems = getMenuItems()
 
     return (
-        <div className={cn(
-            "bg-white border-r border-gray-200 flex flex-col h-full transition-all duration-300",
-            isCollapsed ? "w-16" : "w-64",
-            className
-        )}>
-            {/* Header */}
-            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-                {!isCollapsed && (
-                    <div className="flex items-center">
-                        <Hospital className="h-6 w-6 text-blue-600 mr-2" />
-                        <span className="font-semibold text-gray-900">Sistema</span>
+        <div className="w-64 bg-white border-r border-gray-200 shadow-sm">
+            <div className="p-6">
+                <div className="flex items-center gap-2">
+                    <Building2 className="h-8 w-8 text-blue-600" />
+                    <div>
+                        <h1 className="text-xl font-bold text-gray-900">Hospital</h1>
+                        <p className="text-sm text-gray-500">Sistema Integrado</p>
                     </div>
-                )}
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={toggleSidebar}
-                    className="p-1"
-                >
-                    {isCollapsed ? (
-                        <ChevronRight className="h-4 w-4" />
-                    ) : (
-                        <ChevronLeft className="h-4 w-4" />
-                    )}
-                </Button>
+                </div>
             </div>
 
-            {/* Navigation */}
-            <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-                {/* Sistema */}
-                <SectionHeader label="Sistema" />
-                <MenuItem
-                    icon={AlertTriangle}
-                    label="Emergencia"
-                    onClick={() => navigateTo("dashboard")}
-                    isActive={isActiveSection("dashboard")}
-                />
-
-                {/* Pacientes */}
-                <div className="pt-4">
-                    <SectionHeader label="Pacientes" />
-                    <MenuItem
-                        icon={FileText}
-                        label="Historias Clínicas"
-                        onClick={() => {
-                            console.log("🔄 Navegando a Historias Clínicas")
-                            navigateTo("historias-clinicas")
-                        }}
-                        isActive={isActiveSection("historias-clinicas")}
-                        isSubitem
-                    />
-                    <MenuItem
-                        icon={Upload}
-                        label="Importar Datos"
-                        onClick={() => {
-                            console.log("🔄 Importar Datos - Por implementar")
-                            // navigateTo("importar")
-                        }}
-                        isActive={isActiveSection("importar")}
-                        isSubitem
-                    />
+            {/* Información del usuario */}
+            <div className="px-6 py-4 border-b border-gray-200">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <Users className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                        <p className="font-medium text-gray-900 capitalize">{userRole}</p>
+                        <p className="text-sm text-gray-500">Hospital HOSP001</p>
+                    </div>
                 </div>
+            </div>
 
-                {/* Emergencia */}
-                <div className="pt-4">
-                    <SectionHeader label="Emergencia" />
-                    <MenuItem
-                        icon={Clock}
-                        label="Lista de Espera"
-                        onClick={() => navigateTo("dashboard")}
-                        isActive={isActiveSection("lista-espera")}
-                        isSubitem
-                    />
-                    <MenuItem
-                        icon={UserCheck}
-                        label="Triaje"
-                        onClick={() => navigateTo("dashboard")}
-                        isActive={isActiveSection("triaje")}
-                        isSubitem
-                    />
-                    <MenuItem
-                        icon={Monitor}
-                        label="Dashboard Médicos"
-                        onClick={() => navigateTo("dashboard")}
-                        isActive={isActiveSection("dashboard")}
-                        isSubitem
-                    />
-                    <MenuItem
-                        icon={HeartPulse}
-                        label="Panel Enfermería"
-                        onClick={() => navigateTo("nursing")}
-                        isActive={isActiveSection("enfermeria")}
-                        isSubitem
-                    />
+            {/* Códigos de emergencia activos */}
+            {activeCodes > 0 && (
+                <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 text-red-600" />
+                        <span className="text-sm font-medium text-red-900">
+                            {activeCodes} Código{activeCodes > 1 ? 's' : ''} Activo{activeCodes > 1 ? 's' : ''}
+                        </span>
+                    </div>
+                    <Button
+                        size="sm"
+                        variant="destructive"
+                        className="w-full mt-2"
+                        onClick={() => handleNavigation('emergency-codes', '/codigos-emergencia')}
+                    >
+                        <Siren className="h-4 w-4 mr-2" />
+                        Ver Códigos
+                    </Button>
+                </div>
+            )}
+
+            {/* Menú de navegación */}
+            <nav className="mt-6">
+                <div className="px-3">
+                    {menuItems.map((item) => {
+                        const Icon = item.icon
+                        const isActive = currentView === item.id
+
+                        return (
+                            <Button
+                                key={item.id}
+                                variant={isActive ? "default" : "ghost"}
+                                className={`w-full justify-start mb-1 ${isActive
+                                    ? "bg-blue-600 text-white"
+                                    : "text-gray-700 hover:bg-gray-100"
+                                    }`}
+                                onClick={() => handleNavigation(item.id, item.path)}
+                            >
+                                <Icon className="mr-3 h-4 w-4" />
+                                <span className="flex-1 text-left">{item.label}</span>
+                                {item.badge && (
+                                    <Badge
+                                        variant={item.badgeVariant || "default"}
+                                        className="ml-2"
+                                    >
+                                        {item.badge}
+                                    </Badge>
+                                )}
+                            </Button>
+                        )
+                    })}
                 </div>
             </nav>
 
-            {/* Footer */}
-            {!isCollapsed && (
-                <div className="p-4 border-t border-gray-200">
-                    <div className="text-xs text-gray-500">
-                        <p>Usuario: {state.user?.username}</p>
-                        <p>Hospital: {state.user?.hospitalName}</p>
-                    </div>
+            {/* Sección de workflow rápido */}
+            <div className="mt-8 px-6">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                    Acceso Rápido
+                </h3>
+                <div className="space-y-2">
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        className="w-full justify-start"
+                        onClick={() => handleNavigation('emergency-codes', '/codigos-emergencia')}
+                    >
+                        <Brain className="mr-2 h-3 w-3" />
+                        Código ACV
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        className="w-full justify-start"
+                        onClick={() => handleNavigation('emergency-codes', '/codigos-emergencia')}
+                    >
+                        <Heart className="mr-2 h-3 w-3" />
+                        Código IAM
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        className="w-full justify-start"
+                        onClick={() => handleNavigation('emergency-codes', '/codigos-emergencia')}
+                    >
+                        <Zap className="mr-2 h-3 w-3" />
+                        Código Azul
+                    </Button>
                 </div>
-            )}
+            </div>
+
+            {/* Footer */}
+            <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
+                <p className="text-xs text-gray-500 text-center">
+                    Sistema Hospitalario v1.0
+                </p>
+                <p className="text-xs text-gray-400 text-center">
+                    Nuevo Workflow Implementado
+                </p>
+            </div>
         </div>
     )
 } 

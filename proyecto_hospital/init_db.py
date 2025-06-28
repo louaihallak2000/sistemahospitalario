@@ -31,6 +31,7 @@ from app.models.hospital import Hospital
 from app.models.usuario import Usuario
 from app.models.paciente import Paciente, PacienteHospital
 from app.models.episodio import Episodio
+from app.models.shockroom import ShockroomCama, ShockroomAsignacion, ShockroomAlerta
 from app.core.security import get_password_hash
 from app.core.database import Base
 

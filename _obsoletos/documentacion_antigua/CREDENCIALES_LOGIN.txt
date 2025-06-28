@@ -1,0 +1,132 @@
+================================================================================
+🔐 CREDENCIALES DE LOGIN - SISTEMA HOSPITALARIO
+================================================================================
+
+✅ CREDENCIALES VERIFICADAS Y FUNCIONANDO:
+
+🏥 HOSPITAL:
+• Código: HG001
+• Nombre: Hospital General San Juan
+
+👨‍⚕️ MÉDICO (PRINCIPAL):
+• Usuario: dr.martinez
+• Contraseña: medico123
+• Rol: Doctor
+
+👩‍⚕️ ENFERMERAS:
+• Usuario: enf.garcia
+• Contraseña: enfermera123
+• Rol: Enfermera
+
+• Usuario: enf.lopez
+• Contraseña: enfermera123
+• Rol: Enfermera
+
+🌐 ACCESO AL SISTEMA:
+• Frontend: http://localhost:3000
+• Backend: http://127.0.0.1:8000
+
+🔧 ESTADO DEL SISTEMA:
+• Backend: ✅ ONLINE y FUNCIONANDO
+• Base de datos: ✅ POBLADA con datos de prueba
+• Autenticación: ✅ JWT FUNCIONANDO
+• Credenciales: ✅ VERIFICADAS
+
+📋 INSTRUCCIONES DE LOGIN:
+1. Abrir: http://localhost:3000
+2. Seleccionar Hospital: "HG001 - Hospital General San Juan"
+3. Usuario: dr.martinez
+4. Contraseña: medico123
+5. Hacer clic en "Iniciar Sesión"
+
+⚠️ IMPORTANTE:
+• Las credenciales han sido corregidas en el frontend
+• El sistema está completamente funcional
+• Si persisten errores, verificar que ambos servidores estén corriendo
+
+💡 SOLUCIÓN DE PROBLEMAS:
+• NetworkError = Frontend no está corriendo
+• 401 Unauthorized = Credenciales incorrectas
+• 500 Internal Server Error = Problema en backend
+
+🎯 ÚLTIMA VERIFICACIÓN: 2025-06-24 21:13:26
+✅ TODO FUNCIONANDO CORRECTAMENTE
+
+================================================================================
+🛠️ DETALLES TÉCNICOS (PARA DESARROLLO)
+================================================================================
+
+📡 ENDPOINT DE LOGIN:
+   POST http://localhost:8000/auth/login
+   Content-Type: application/json
+
+📄 FORMATO DE DATOS:
+{
+    "hospital_code": "HG001",
+    "username": "dr.martinez",
+    "password": "medico123"
+}
+
+🎫 RESPUESTA EXITOSA:
+{
+    "access_token": "eyJhbGciOiJIUzI1NiIs...",
+    "token_type": "bearer"
+}
+
+================================================================================
+🚨 PROBLEMAS SOLUCIONADOS
+================================================================================
+
+❌ PROBLEMA ANTERIOR: Error 422 - "Input should be a valid dictionary"
+✅ SOLUCIÓN: Agregado campo "hospital_code" requerido
+
+❌ PROBLEMA ANTERIOR: Contraseñas con hashes de ejemplo inválidos
+✅ SOLUCIÓN: Contraseñas regeneradas con hashes bcrypt válidos
+
+❌ PROBLEMA ANTERIOR: Formato de datos incorrecto
+✅ SOLUCIÓN: Usar JSON con hospital_code, username, password
+
+================================================================================
+💡 INSTRUCCIONES DE USO
+================================================================================
+
+1. INICIAR SISTEMA:
+   - Ejecuta: INICIAR_SISTEMA_HOSPITALARIO.bat
+   - Espera a que aparezcan 2 ventanas (Backend + Frontend)
+   - Ve a: http://localhost:3000
+
+2. HACER LOGIN:
+   - Usa cualquiera de las credenciales válidas arriba
+   - El sistema debería funcionar sin errores
+
+3. SI HAY PROBLEMAS:
+   - Ejecuta: DETENER_SISTEMA_HOSPITALARIO.bat
+   - Espera 10 segundos
+   - Ejecuta: INICIAR_SISTEMA_HOSPITALARIO.bat nuevamente
+
+================================================================================
+🎯 ESTADO ACTUAL DEL SISTEMA
+================================================================================
+
+✅ Backend: Funcionando correctamente (Puerto 8000)
+✅ Frontend: Listo para iniciar (Puerto 3000)
+✅ Base de datos: Poblada con 19 usuarios, 15 pacientes, 20 episodios
+✅ WebSocket: Configurado para notificaciones en tiempo real
+✅ Login: COMPLETAMENTE FUNCIONAL
+✅ Contraseñas: Corregidas con hashes válidos
+
+================================================================================
+🚀 ¡SISTEMA LISTO PARA USO COMPLETO!
+================================================================================
+
+El sistema hospitalario está completamente funcional:
+• Login corregido y verificado
+• Datos de ejemplo cargados
+• Notificaciones en tiempo real
+• Panel de enfermería avanzado
+• Historia clínica automática
+• Sistema de triaje por colores
+
+¡Disfruta usando el sistema hospitalario! 🏥
+
+================================================================================ 

@@ -20,4 +20,5 @@ class Hospital(Base):
     # Relaciones
     usuarios = relationship("Usuario", back_populates="hospital", cascade="all, delete-orphan")
     episodios = relationship("Episodio", back_populates="hospital", cascade="all, delete-orphan")
-    pacientes_hospital = relationship("PacienteHospital", back_populates="hospital", cascade="all, delete-orphan") 
+    pacientes_hospital = relationship("PacienteHospital", back_populates="hospital", cascade="all, delete-orphan")
+    shockroom_camas = relationship("ShockroomCama", back_populates="hospital", cascade="all, delete-orphan") 
